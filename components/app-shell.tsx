@@ -18,6 +18,7 @@ import {
   Shirt,
   Award,
   LayoutDashboard,
+  ClipboardList,
 } from "lucide-react"
 
 type NavItem = {
@@ -28,6 +29,7 @@ type NavItem = {
 
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard },
+  { label: "My Orders", href: "/orders/my-orders", icon: ClipboardList },
   { label: "Uniform Order", href: "/orders/uniform", icon: Shirt },
   { label: "Badge Order", href: "/orders/badges", icon: Award },
 ]

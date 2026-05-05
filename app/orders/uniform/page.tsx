@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -308,12 +309,28 @@ function ItemSizingCard({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+function entryToApiItem(entry: ItemEntry) {
+  if (NO_SIZE_ITEMS.has(entry.itemType)) {
+    return { itemType: entry.itemType, size: "", needSizing: false, sizingDetails: "" }
+  }
+  if (entry.mode === "known") {
+    return { itemType: entry.itemType, size: entry.size, needSizing: false, sizingDetails: "" }
+  }
+  return {
+    itemType: entry.itemType,
+    size: "",
+    needSizing: true,
+    sizingDetails: JSON.stringify(entry.sizing),
+  }
+}
+
 export default function UniformOrderPage() {
+  const router = useRouter()
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
   const [entries, setEntries] = useState<Record<string, ItemEntry>>({})
   const [selectorOpen, setSelectorOpen] = useState(true)
   const [submitting, setSubmitting] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   function toggleItem(itemType: string) {
     setSelectedItems((prev) => {
@@ -351,30 +368,30 @@ export default function UniformOrderPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!isValid()) return
+    setError(null)
     setSubmitting(true)
-    // TODO: POST to API
-    await new Promise((r) => setTimeout(r, 600))
-    setSubmitting(false)
-    setSubmitted(true)
-  }
-
-  if (submitted) {
-    return (
-      <div className="mx-auto max-w-lg space-y-6">
-        <Card>
-          <CardContent className="pt-8 pb-8 text-center space-y-3">
-            <div className="text-4xl">✓</div>
-            <h2 className="text-xl font-semibold">Order submitted</h2>
-            <p className="text-sm text-muted-foreground">
-              Your uniform order has been received. The QM will be in touch.
-            </p>
-            <Button variant="outline" onClick={() => { setSubmitted(false); setSelectedItems(new Set()); setEntries({}) }}>
-              Submit another order
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    )
+    try {
+      const items = ITEM_TYPES.filter((t) => selectedItems.has(t)).map((t) => entryToApiItem(entries[t]))
+      const res = await fetch("/api/cadet/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items }),
+      })
+      if (res.status === 404) {
+        setError("You are not registered in the system. Please speak to a member of staff.")
+        return
+      }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setError(data.detail ?? "Something went wrong. Please try again.")
+        return
+      }
+      router.push("/orders/my-orders")
+    } catch {
+      setError("Network error. Please check your connection and try again.")
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const orderedSelected = ITEM_TYPES.filter((t) => selectedItems.has(t))
@@ -438,6 +455,12 @@ export default function UniformOrderPage() {
                 onChange={(patch) => updateEntry(itemType, patch)}
               />
             ))}
+          </div>
+        )}
+
+        {error && (
+          <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {error}
           </div>
         )}
 

@@ -1,8 +1,15 @@
 "use client"
 
+import Link from "next/link"
 import { useSession } from "next-auth/react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Shirt, Award } from "lucide-react"
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Shirt, Award, ClipboardList } from "lucide-react"
+
+const QUICK_LINKS = [
+  { href: "/orders/uniform", icon: Shirt, title: "Uniform Order", desc: "Request new uniform items or replacements." },
+  { href: "/orders/badges", icon: Award, title: "Badge Order", desc: "Order proficiency badges you have qualified for." },
+  { href: "/orders/my-orders", icon: ClipboardList, title: "My Orders", desc: "View and manage your submitted orders." },
+]
 
 export default function HomePage() {
   const { data: session } = useSession()
@@ -16,36 +23,18 @@ export default function HomePage() {
         )}
       </div>
 
-      <div className="grid gap-6 sm:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <Shirt className="h-6 w-6 text-primary" />
-              <CardTitle>Uniform Order</CardTitle>
-            </div>
-            <CardDescription>
-              Request new uniform items or replacements.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">Form coming soon.</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <Award className="h-6 w-6 text-primary" />
-              <CardTitle>Badge Order</CardTitle>
-            </div>
-            <CardDescription>
-              Order proficiency badges you have qualified for.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">Form coming soon.</p>
-          </CardContent>
-        </Card>
+      <div className="grid gap-6 sm:grid-cols-3">
+        {QUICK_LINKS.map(({ href, icon: Icon, title, desc }) => (
+          <Link key={href} href={href}>
+            <Card className="h-full cursor-pointer transition-shadow hover:shadow-md">
+              <CardHeader>
+                <Icon className="mb-2 h-5 w-5 text-primary" />
+                <CardTitle className="text-base">{title}</CardTitle>
+                <CardDescription>{desc}</CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
+        ))}
       </div>
     </div>
   )
