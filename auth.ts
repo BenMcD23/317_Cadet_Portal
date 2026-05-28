@@ -9,6 +9,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     ...authConfig.callbacks,
     async jwt({ token, account }) {
       if (account) {
+        console.log("[auth] account.id_token present:", !!account.id_token)
         token.id_token = account.id_token
       }
       return token
