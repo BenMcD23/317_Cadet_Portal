@@ -14,6 +14,14 @@ import { ChevronDown, ChevronUp, Plus, Trash2, PackageCheck, Pencil, X, Shirt, A
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BADGE_CATEGORIES, BadgeCategory, buildBadgeName } from "@/lib/badge-types"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -141,6 +149,12 @@ function emptyDraft(itemType = ""): DraftItem {
   return { itemType, size: "", needSizing: false, sizingDetails: "" }
 }
 
+const OVERALL_FIT_OPTIONS = [
+  { value: "bigger",  label: "Bigger" },
+  { value: "smaller", label: "Smaller" },
+  { value: "same",    label: "Same size" },
+] as const
+
 function SizingEditor({
   itemType,
   initial,
@@ -197,13 +211,14 @@ function SizingEditor({
 
   return (
     <div className="space-y-3 pt-1">
+      {/* Mode toggle */}
       <div className="flex gap-2">
         {(["known", "needs-sizing"] as const).map((m) => (
           <button key={m} type="button" onClick={() => setMode(m)}
-            className={cn("flex-1 rounded-md border px-2 py-1 text-xs font-medium transition-colors",
+            className={cn("flex-1 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
               mode === m ? "border-primary bg-primary text-primary-foreground" : "border-input bg-background hover:bg-accent"
             )}>
-            {m === "known" ? "Known size" : "Need sizing"}
+            {m === "known" ? "I know my size" : "Need sizing"}
           </button>
         ))}
       </div>
@@ -213,36 +228,89 @@ function SizingEditor({
       )}
 
       {mode === "needs-sizing" && (
-        <div className="space-y-2 rounded-md border bg-muted/30 p-2">
-          <div className="flex items-center gap-2">
-            <Checkbox id="unk" checked={unknownSize} onCheckedChange={(c) => { setUnknownSize(!!c); if (!!c) setCurrentSize("") }} />
-            <Label htmlFor="unk" className="text-xs cursor-pointer">Don&apos;t know current size</Label>
+        <div className="space-y-3">
+          {/* Current size */}
+          <div className="space-y-2">
+            <Label className="text-xs font-medium">What is your current size?</Label>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id={`unk-${itemType}`}
+                checked={unknownSize}
+                onCheckedChange={(c) => { setUnknownSize(!!c); if (!!c) setCurrentSize("") }}
+              />
+              <Label htmlFor={`unk-${itemType}`} className="text-xs cursor-pointer">
+                I don&apos;t know my current size
+              </Label>
+            </div>
+            {!unknownSize && (
+              <SizeCombobox itemType={itemType} value={currentSize} onChange={setCurrentSize} placeholder="Current size…" />
+            )}
           </div>
-          {!unknownSize && <SizeCombobox itemType={itemType} value={currentSize} onChange={setCurrentSize} placeholder="Current size…" />}
+
+          {/* Adjustments — only shown when current size is known */}
           {!unknownSize && (
-            <>
-              <div className="flex gap-1.5">
-                {(["bigger", "smaller", "same"] as const).map((v) => (
-                  <button key={v} type="button" onClick={() => setFit(fit === v ? "" : v)}
-                    className={cn("flex-1 rounded border px-1.5 py-1 text-xs font-medium transition-colors",
-                      fit === v ? "border-primary bg-primary text-primary-foreground" : "border-input bg-background hover:bg-accent"
-                    )}>
-                    {v === "same" ? "Same" : v.charAt(0).toUpperCase() + v.slice(1)}
-                  </button>
-                ))}
-              </div>
-              {showChest && <Input placeholder="Chest" value={chest} onChange={(e) => setChest(e.target.value)} className="h-7 text-xs" />}
-              {showCollar && <Input placeholder="Collar" value={collar} onChange={(e) => setCollar(e.target.value)} className="h-7 text-xs" />}
-              {showWaistLeg && (
-                <div className="grid grid-cols-2 gap-2">
-                  <Input placeholder="Waist" value={waist} onChange={(e) => setWaist(e.target.value)} className="h-7 text-xs" />
-                  <Input placeholder="Leg" value={leg} onChange={(e) => setLeg(e.target.value)} className="h-7 text-xs" />
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Adjustments needed</Label>
+              <div className="space-y-3 rounded-md border bg-muted/30 p-3">
+                {/* Overall fit */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Overall fit</Label>
+                  <div className="flex gap-2">
+                    {OVERALL_FIT_OPTIONS.map(({ value, label }) => (
+                      <button key={value} type="button"
+                        onClick={() => setFit(fit === value ? "" : value)}
+                        className={cn(
+                          "flex-1 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
+                          fit === value ? "border-primary bg-primary text-primary-foreground" : "border-input bg-background hover:bg-accent"
+                        )}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              )}
-              {showSeat && <Input placeholder="Seat" value={seat} onChange={(e) => setSeat(e.target.value)} className="h-7 text-xs" />}
-              {showHips && <Input placeholder="Hips" value={hips} onChange={(e) => setHips(e.target.value)} className="h-7 text-xs" />}
-              <Input placeholder="Other notes" value={notes} onChange={(e) => setNotes(e.target.value)} className="h-7 text-xs" />
-            </>
+
+                {showChest && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Chest</Label>
+                    <Input placeholder="e.g. slightly bigger" value={chest} onChange={(e) => setChest(e.target.value)} className="h-8 text-sm" />
+                  </div>
+                )}
+                {showCollar && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Collar</Label>
+                    <Input placeholder="e.g. one size bigger" value={collar} onChange={(e) => setCollar(e.target.value)} className="h-8 text-sm" />
+                  </div>
+                )}
+                {showWaistLeg && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Waist (W)</Label>
+                      <Input placeholder="e.g. 2cm bigger" value={waist} onChange={(e) => setWaist(e.target.value)} className="h-8 text-sm" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Leg (L)</Label>
+                      <Input placeholder="e.g. shorter" value={leg} onChange={(e) => setLeg(e.target.value)} className="h-8 text-sm" />
+                    </div>
+                  </div>
+                )}
+                {showSeat && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Seat (S)</Label>
+                    <Input placeholder="e.g. bigger" value={seat} onChange={(e) => setSeat(e.target.value)} className="h-8 text-sm" />
+                  </div>
+                )}
+                {showHips && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Hips (H)</Label>
+                    <Input placeholder="e.g. bigger" value={hips} onChange={(e) => setHips(e.target.value)} className="h-8 text-sm" />
+                  </div>
+                )}
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Any other notes</Label>
+                  <Input placeholder="e.g. longer in the body" value={notes} onChange={(e) => setNotes(e.target.value)} className="h-8 text-sm" />
+                </div>
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -407,6 +475,12 @@ export default function MyOrdersPage() {
   const [addingToBadgeId, setAddingToBadgeId] = useState<string | null>(null)
   const [savingBadgeId, setSavingBadgeId] = useState<string | null>(null)
   const [confirmCancelBadgeId, setConfirmCancelBadgeId] = useState<string | null>(null)
+
+  // Confirm remove item dialog
+  type PendingRemove =
+    | { kind: "uniform"; order: Order; itemId: string; label: string }
+    | { kind: "badge"; order: BadgeOrder; itemId: string; label: string }
+  const [pendingRemove, setPendingRemove] = useState<PendingRemove | null>(null)
 
   useEffect(() => { fetchAll() }, [])
 
@@ -678,7 +752,7 @@ export default function MyOrdersPage() {
                                     <Button size="icon" variant="ghost"
                                       className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
                                       disabled={isSaving}
-                                      onClick={() => handleRemoveItem(order, item.id)}
+                                      onClick={() => setPendingRemove({ kind: "uniform", order, itemId: item.id, label: item.itemType })}
                                       aria-label="Remove item">
                                       <Trash2 className="h-3.5 w-3.5" />
                                     </Button>
@@ -795,7 +869,7 @@ export default function MyOrdersPage() {
                               <Button size="icon" variant="ghost"
                                 className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
                                 disabled={isSaving}
-                                onClick={() => handleRemoveBadge(order, item.id)}
+                                onClick={() => setPendingRemove({ kind: "badge", order, itemId: item.id, label: item.badgeName })}
                                 aria-label="Remove badge">
                                 <Trash2 className="h-3.5 w-3.5" />
                               </Button>
@@ -975,6 +1049,35 @@ export default function MyOrdersPage() {
           })}
         </section>
       )}
+
+      {/* Confirm remove item dialog */}
+      <Dialog open={!!pendingRemove} onOpenChange={(open) => { if (!open) setPendingRemove(null) }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Remove item?</DialogTitle>
+            <DialogDescription>
+              <span className="font-medium text-foreground">{pendingRemove?.label}</span> will be removed from your order. This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" onClick={() => setPendingRemove(null)}>Keep it</Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (!pendingRemove) return
+                if (pendingRemove.kind === "uniform") {
+                  handleRemoveItem(pendingRemove.order, pendingRemove.itemId)
+                } else {
+                  handleRemoveBadge(pendingRemove.order, pendingRemove.itemId)
+                }
+                setPendingRemove(null)
+              }}
+            >
+              Remove
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
