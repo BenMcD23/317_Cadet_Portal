@@ -10,9 +10,10 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { SizeCombobox } from "@/components/size-combobox"
 import { ITEM_TYPES, NO_SIZE_ITEMS, WAIST_LEG_ITEMS, CHEST_ITEMS, COLLAR_ITEMS, SEAT_ITEMS, HIPS_ITEMS } from "@/lib/uniform-items"
 import { cn } from "@/lib/utils"
-import { ChevronDown, ChevronUp, Plus, Trash2, PackageCheck, Pencil, X, Shirt } from "lucide-react"
+import { ChevronDown, ChevronUp, Plus, Trash2, PackageCheck, Pencil, X, Shirt, Award } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { BADGE_CATEGORIES, BadgeCategory, buildBadgeName } from "@/lib/badge-types"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -41,6 +42,23 @@ interface Order {
   timestamp: string
   completed: boolean
   items: OrderItem[]
+}
+
+interface BadgeItem {
+  id: string
+  badgeName: string
+  qmNotes: QmNote[]
+  givenAt: string | null
+  givenBy: string | null
+}
+
+interface BadgeOrder {
+  id: string
+  cadetName: string
+  cadetCin: number
+  timestamp: string
+  completed: boolean
+  items: BadgeItem[]
 }
 
 interface SizingDetailsJSON {
@@ -239,7 +257,7 @@ function SizingEditor({
   )
 }
 
-// ─── Add item inline ──────────────────────────────────────────────────────────
+// ─── Add uniform item inline ──────────────────────────────────────────────────
 
 function AddItemRow({ existingTypes, onAdd, onCancel }: {
   existingTypes: Set<string>
@@ -273,27 +291,137 @@ function AddItemRow({ existingTypes, onAdd, onCancel }: {
   )
 }
 
+// ─── Badge picker ─────────────────────────────────────────────────────────────
+
+function BadgePicker({
+  category, subType, level, onCategory, onSubType, onLevel,
+}: {
+  category: BadgeCategory | null
+  subType: string | null
+  level: string | null
+  onCategory: (c: BadgeCategory | null) => void
+  onSubType: (s: string | null) => void
+  onLevel: (l: string | null) => void
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="space-y-1.5">
+        <Label className="text-xs">Badge type</Label>
+        <Select
+          value={category?.id ?? ""}
+          onValueChange={(v) => onCategory(BADGE_CATEGORIES.find((c) => c.id === v) ?? null)}
+        >
+          <SelectTrigger className="h-9"><SelectValue placeholder="Select type…" /></SelectTrigger>
+          <SelectContent>
+            {BADGE_CATEGORIES.map((c) => (
+              <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {category && (category.subTypes || category.items) && (
+        <div className="space-y-1.5">
+          <Label className="text-xs">{category.subTypes ? "Sub-type" : "Badge"}</Label>
+          <Select value={subType ?? ""} onValueChange={onSubType}>
+            <SelectTrigger className="h-9"><SelectValue placeholder="Select…" /></SelectTrigger>
+            <SelectContent>
+              {(category.subTypes ?? category.items ?? []).map((s) => (
+                <SelectItem key={s} value={s}>{s}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {category?.levels && (!category.subTypes || subType) && (
+        <div className="space-y-1.5">
+          <Label className="text-xs">Level</Label>
+          <Select value={level ?? ""} onValueChange={onLevel}>
+            <SelectTrigger className="h-9"><SelectValue placeholder="Select level…" /></SelectTrigger>
+            <SelectContent>
+              {category.levels.map((l) => (
+                <SelectItem key={l} value={l}>{l}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Add badge inline ─────────────────────────────────────────────────────────
+
+function AddBadgeRow({ onAdd, onCancel }: { onAdd: (badgeName: string) => void; onCancel: () => void }) {
+  const [category, setCategory] = useState<BadgeCategory | null>(null)
+  const [subType, setSubType] = useState<string | null>(null)
+  const [level, setLevel] = useState<string | null>(null)
+
+  const badgeName = category ? buildBadgeName(category, subType, level) : null
+
+  return (
+    <div className="rounded-md border border-dashed p-3 space-y-3">
+      <p className="text-xs font-medium text-muted-foreground">Add badge</p>
+      <BadgePicker
+        category={category}
+        subType={subType}
+        level={level}
+        onCategory={(c) => { setCategory(c); setSubType(null); setLevel(null) }}
+        onSubType={(s) => { setSubType(s); setLevel(null) }}
+        onLevel={setLevel}
+      />
+      <div className="flex gap-2">
+        <Button size="sm" className="h-7 px-3 text-xs"
+          disabled={!badgeName}
+          onClick={() => { if (badgeName) onAdd(badgeName) }}>
+          <Plus className="mr-1 h-3.5 w-3.5" />
+          Add Badge
+        </Button>
+        <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={onCancel}>Cancel</Button>
+      </div>
+    </div>
+  )
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+type Entry =
+  | { key: string; ts: number; kind: "uniform"; order: Order }
+  | { key: string; ts: number; kind: "badge"; order: BadgeOrder }
+
 export default function MyOrdersPage() {
-  const [orders, setOrders] = useState<Order[]>([])
+  const [uniformOrders, setUniformOrders] = useState<Order[]>([])
+  const [badgeOrders, setBadgeOrders] = useState<BadgeOrder[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+
+  // Uniform order editing state
   const [addingToId, setAddingToId] = useState<string | null>(null)
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
   const [savingId, setSavingId] = useState<string | null>(null)
   const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null)
 
-  useEffect(() => { fetchOrders() }, [])
+  // Badge order editing state
+  const [addingToBadgeId, setAddingToBadgeId] = useState<string | null>(null)
+  const [savingBadgeId, setSavingBadgeId] = useState<string | null>(null)
+  const [confirmCancelBadgeId, setConfirmCancelBadgeId] = useState<string | null>(null)
 
-  async function fetchOrders() {
+  useEffect(() => { fetchAll() }, [])
+
+  async function fetchAll() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch("/api/cadet/orders")
-      if (!res.ok) throw new Error("Failed to load orders")
-      setOrders(await res.json())
+      const [uRes, bRes] = await Promise.all([
+        fetch("/api/cadet/orders"),
+        fetch("/api/cadet/badge-orders"),
+      ])
+      if (!uRes.ok) throw new Error("Failed to load uniform orders")
+      if (!bRes.ok) throw new Error("Failed to load badge orders")
+      setUniformOrders(await uRes.json())
+      setBadgeOrders(await bRes.json())
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unknown error")
     } finally {
@@ -301,13 +429,15 @@ export default function MyOrdersPage() {
     }
   }
 
-  function toggleExpand(id: string) {
+  function toggleExpand(key: string) {
     setExpandedIds((prev) => {
       const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
+      next.has(key) ? next.delete(key) : next.add(key)
       return next
     })
   }
+
+  // ─── Uniform order actions ──────────────────────────────────────────────────
 
   async function patchOrder(orderId: string, items: DraftItem[]) {
     setSavingId(orderId)
@@ -319,7 +449,7 @@ export default function MyOrdersPage() {
       })
       if (!res.ok) throw new Error("Failed to update order")
       const updated: Order = await res.json()
-      setOrders((prev) => prev.map((o) => o.id === updated.id ? updated : o))
+      setUniformOrders((prev) => prev.map((o) => o.id === updated.id ? updated : o))
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unknown error")
     } finally {
@@ -335,7 +465,7 @@ export default function MyOrdersPage() {
         const data = await res.json().catch(() => ({}))
         throw new Error(data.detail ?? "Failed to cancel order")
       }
-      setOrders((prev) => prev.filter((o) => o.id !== orderId))
+      setUniformOrders((prev) => prev.filter((o) => o.id !== orderId))
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unknown error")
     } finally {
@@ -370,22 +500,91 @@ export default function MyOrdersPage() {
     setEditingItemId(null)
   }
 
-  const activeOrders    = orders.filter((o) => !o.completed)
-  const completedOrders = orders.filter((o) => o.completed)
+  // ─── Badge order actions ────────────────────────────────────────────────────
+
+  async function patchBadgeOrder(orderId: string, items: { badgeName: string }[]) {
+    setSavingBadgeId(orderId)
+    try {
+      const res = await fetch(`/api/cadet/badge-orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items }),
+      })
+      if (!res.ok) throw new Error("Failed to update badge order")
+      const updated: BadgeOrder = await res.json()
+      setBadgeOrders((prev) => prev.map((o) => o.id === updated.id ? updated : o))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unknown error")
+    } finally {
+      setSavingBadgeId(null)
+    }
+  }
+
+  async function cancelBadgeOrder(orderId: string) {
+    setSavingBadgeId(orderId)
+    try {
+      const res = await fetch(`/api/cadet/badge-orders/${orderId}`, { method: "DELETE" })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.detail ?? "Failed to cancel badge order")
+      }
+      setBadgeOrders((prev) => prev.filter((o) => o.id !== orderId))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unknown error")
+    } finally {
+      setSavingBadgeId(null)
+      setConfirmCancelBadgeId(null)
+    }
+  }
+
+  function handleAddBadge(order: BadgeOrder, badgeName: string) {
+    const nonGiven = order.items.filter((i) => !i.givenAt).map((i) => ({ badgeName: i.badgeName }))
+    patchBadgeOrder(order.id, [...nonGiven, { badgeName }])
+    setAddingToBadgeId(null)
+  }
+
+  function handleRemoveBadge(order: BadgeOrder, itemId: string) {
+    const remaining = order.items
+      .filter((i) => !i.givenAt && i.id !== itemId)
+      .map((i) => ({ badgeName: i.badgeName }))
+    patchBadgeOrder(order.id, remaining)
+  }
+
+  // ─── Combined sorted lists ──────────────────────────────────────────────────
+
+  const allActive: Entry[] = [
+    ...uniformOrders.filter((o) => !o.completed).map((o) => ({ key: `u-${o.id}`, ts: new Date(o.timestamp).getTime(), kind: "uniform" as const, order: o })),
+    ...badgeOrders.filter((o) => !o.completed).map((o) => ({ key: `b-${o.id}`, ts: new Date(o.timestamp).getTime(), kind: "badge" as const, order: o })),
+  ].sort((a, b) => b.ts - a.ts)
+
+  const allCompleted: Entry[] = [
+    ...uniformOrders.filter((o) => o.completed).map((o) => ({ key: `u-${o.id}`, ts: new Date(o.timestamp).getTime(), kind: "uniform" as const, order: o })),
+    ...badgeOrders.filter((o) => o.completed).map((o) => ({ key: `b-${o.id}`, ts: new Date(o.timestamp).getTime(), kind: "badge" as const, order: o })),
+  ].sort((a, b) => b.ts - a.ts)
+
+  const totalCount = uniformOrders.length + badgeOrders.length
 
   return (
     <div className="mx-auto max-w-2xl space-y-8 pb-16">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">My Orders</h1>
-          {!loading && <p className="text-sm text-muted-foreground">{orders.length} order{orders.length !== 1 ? "s" : ""}</p>}
+          {!loading && <p className="text-sm text-muted-foreground">{totalCount} order{totalCount !== 1 ? "s" : ""}</p>}
         </div>
-        <Link href="/orders/uniform">
-          <Button size="sm">
-            <Plus className="mr-1.5 h-4 w-4" />
-            New Order
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/orders/uniform">
+            <Button size="sm" variant="outline">
+              <Shirt className="mr-1.5 h-4 w-4" />
+              Uniform
+            </Button>
+          </Link>
+          <Link href="/orders/badges">
+            <Button size="sm" variant="outline">
+              <Award className="mr-1.5 h-4 w-4" />
+              Badge
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {error && (
@@ -396,39 +595,189 @@ export default function MyOrdersPage() {
 
       {loading && <p className="text-sm text-muted-foreground">Loading your orders…</p>}
 
-      {!loading && orders.length === 0 && (
-        <div className="rounded-md border border-dashed p-8 text-center space-y-3">
-          <Shirt className="mx-auto h-8 w-8 text-muted-foreground" />
+      {!loading && totalCount === 0 && (
+        <div className="rounded-md border border-dashed p-8 text-center space-y-4">
           <p className="text-sm text-muted-foreground">You have no orders yet.</p>
-          <Link href="/orders/uniform">
-            <Button size="sm" variant="outline">Place a Uniform Order</Button>
-          </Link>
+          <div className="flex justify-center gap-2">
+            <Link href="/orders/uniform">
+              <Button size="sm" variant="outline">
+                <Shirt className="mr-1.5 h-4 w-4" />
+                Place Uniform Order
+              </Button>
+            </Link>
+            <Link href="/orders/badges">
+              <Button size="sm" variant="outline">
+                <Award className="mr-1.5 h-4 w-4" />
+                Place Badge Order
+              </Button>
+            </Link>
+          </div>
         </div>
       )}
 
       {/* Active orders */}
-      {activeOrders.length > 0 && (
+      {allActive.length > 0 && (
         <section className="space-y-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Active</h2>
-          {activeOrders.map((order) => {
-            const expanded = expandedIds.has(order.id)
+          {allActive.map((entry) => {
+            const expanded = expandedIds.has(entry.key)
+
+            if (entry.kind === "uniform") {
+              const order = entry.order
+              const noneGiven = order.items.every((i) => !i.givenAt)
+              const existingTypes = new Set(order.items.map((i) => i.itemType))
+              const isSaving = savingId === order.id
+
+              return (
+                <Card key={entry.key}>
+                  <CardHeader className="pb-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0 flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-0.5 text-[10px] font-medium">
+                          <Shirt className="h-3 w-3" /> Uniform
+                        </span>
+                        <p className="text-xs text-muted-foreground">{formatTimestamp(order.timestamp)}</p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <Badge variant="secondary" className="text-xs">
+                          {order.items.length} item{order.items.length !== 1 ? "s" : ""}
+                        </Badge>
+                        <Button size="icon" variant="ghost" className="h-8 w-8"
+                          onClick={() => toggleExpand(entry.key)}>
+                          {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+
+                  {expanded && (
+                    <CardContent className="pt-4 space-y-3">
+                      <ul className="space-y-2">
+                        {order.items.map((item) => {
+                          const isEditing = editingItemId === item.id
+                          const canEdit = !item.givenAt
+
+                          return (
+                            <li key={item.id} className="rounded-md border bg-muted/30 p-3 space-y-2">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0 space-y-1">
+                                  <p className="text-sm font-medium">{item.itemType}</p>
+                                  {item.needSizing ? (
+                                    <SizingDetailsDisplay raw={item.sizingDetails} />
+                                  ) : (
+                                    <p className="text-xs text-muted-foreground">Size: {item.size || "—"}</p>
+                                  )}
+                                </div>
+                                {canEdit && !isEditing && (
+                                  <div className="flex gap-1.5 shrink-0">
+                                    <Button size="icon" variant="ghost" className="h-7 w-7"
+                                      onClick={() => { setEditingItemId(item.id); setAddingToId(null) }}
+                                      aria-label="Edit sizing">
+                                      <Pencil className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Button size="icon" variant="ghost"
+                                      className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                      disabled={isSaving}
+                                      onClick={() => handleRemoveItem(order, item.id)}
+                                      aria-label="Remove item">
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+
+                              {item.givenAt && (
+                                <div className="flex items-center gap-1.5 rounded-md bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 px-2.5 py-1.5">
+                                  <PackageCheck className="h-3 w-3 shrink-0 text-green-600 dark:text-green-400" />
+                                  <p className="text-xs text-green-700 dark:text-green-400">
+                                    Issued {formatTimestamp(item.givenAt)}
+                                    {item.givenBy && <> · {item.givenBy}</>}
+                                  </p>
+                                </div>
+                              )}
+
+                              {isEditing && (
+                                <SizingEditor
+                                  itemType={item.itemType}
+                                  initial={{ size: item.size, sizingDetails: item.sizingDetails, needSizing: item.needSizing }}
+                                  onSave={(draft) => handleEditSave(order, item.id, draft)}
+                                  onCancel={() => setEditingItemId(null)}
+                                />
+                              )}
+                            </li>
+                          )
+                        })}
+                      </ul>
+
+                      {addingToId === order.id ? (
+                        <AddItemRow
+                          existingTypes={existingTypes}
+                          onAdd={(draft) => handleAddItem(order, draft)}
+                          onCancel={() => setAddingToId(null)}
+                        />
+                      ) : (
+                        <Button size="sm" variant="outline" className="w-full h-8 text-xs"
+                          disabled={isSaving || existingTypes.size >= ITEM_TYPES.length}
+                          onClick={() => { setAddingToId(order.id); setEditingItemId(null) }}>
+                          <Plus className="mr-1.5 h-3.5 w-3.5" />
+                          Add Item
+                        </Button>
+                      )}
+
+                      {confirmCancelId === order.id ? (
+                        <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 space-y-2">
+                          <p className="text-sm font-medium text-destructive">Cancel this order?</p>
+                          <p className="text-xs text-muted-foreground">This cannot be undone. Any items not yet issued will be removed.</p>
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="destructive" className="h-7 px-3 text-xs"
+                              disabled={isSaving}
+                              onClick={() => cancelOrder(order.id)}>
+                              {isSaving ? "Cancelling…" : "Yes, cancel order"}
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs"
+                              onClick={() => setConfirmCancelId(null)}>
+                              Keep order
+                            </Button>
+                          </div>
+                        </div>
+                      ) : noneGiven ? (
+                        <div className="flex justify-end">
+                          <Button size="sm" variant="ghost"
+                            className="h-7 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            disabled={isSaving}
+                            onClick={() => setConfirmCancelId(order.id)}>
+                            <X className="mr-1 h-3.5 w-3.5" />
+                            Cancel order
+                          </Button>
+                        </div>
+                      ) : null}
+                    </CardContent>
+                  )}
+                </Card>
+              )
+            }
+
+            // Badge order card
+            const order = entry.order
             const noneGiven = order.items.every((i) => !i.givenAt)
-            const existingTypes = new Set(order.items.map((i) => i.itemType))
-            const isSaving = savingId === order.id
+            const isSaving = savingBadgeId === order.id
 
             return (
-              <Card key={order.id}>
+              <Card key={entry.key}>
                 <CardHeader className="pb-0">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-0.5 text-[10px] font-medium">
+                        <Award className="h-3 w-3" /> Badge
+                      </span>
                       <p className="text-xs text-muted-foreground">{formatTimestamp(order.timestamp)}</p>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       <Badge variant="secondary" className="text-xs">
-                        {order.items.length} item{order.items.length !== 1 ? "s" : ""}
+                        {order.items.length} badge{order.items.length !== 1 ? "s" : ""}
                       </Badge>
                       <Button size="icon" variant="ghost" className="h-8 w-8"
-                        onClick={() => toggleExpand(order.id)}>
+                        onClick={() => toggleExpand(entry.key)}>
                         {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                       </Button>
                     </div>
@@ -438,103 +787,60 @@ export default function MyOrdersPage() {
                 {expanded && (
                   <CardContent className="pt-4 space-y-3">
                     <ul className="space-y-2">
-                      {order.items.map((item) => {
-                        const isEditing = editingItemId === item.id
-                        const canEdit = !item.givenAt
+                      {order.items.map((item) => (
+                        <li key={item.id} className="rounded-md border bg-muted/30 p-3 space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-sm font-medium">{item.badgeName}</p>
+                            {!item.givenAt && (
+                              <Button size="icon" variant="ghost"
+                                className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                disabled={isSaving}
+                                onClick={() => handleRemoveBadge(order, item.id)}
+                                aria-label="Remove badge">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                          </div>
 
-                        return (
-                          <li key={item.id} className="rounded-md border bg-muted/30 p-3 space-y-2">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex-1 min-w-0 space-y-1">
-                                <p className="text-sm font-medium">{item.itemType}</p>
-                                {item.needSizing ? (
-                                  <SizingDetailsDisplay raw={item.sizingDetails} />
-                                ) : (
-                                  <p className="text-xs text-muted-foreground">Size: {item.size || "—"}</p>
-                                )}
-                              </div>
-                              {canEdit && !isEditing && (
-                                <div className="flex gap-1.5 shrink-0">
-                                  <Button size="icon" variant="ghost" className="h-7 w-7"
-                                    onClick={() => { setEditingItemId(item.id); setAddingToId(null) }}
-                                    aria-label="Edit sizing">
-                                    <Pencil className="h-3.5 w-3.5" />
-                                  </Button>
-                                  <Button size="icon" variant="ghost"
-                                    className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                                    disabled={isSaving}
-                                    onClick={() => handleRemoveItem(order, item.id)}
-                                    aria-label="Remove item">
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </Button>
-                                </div>
-                              )}
+                          {item.givenAt && (
+                            <div className="flex items-center gap-1.5 rounded-md bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 px-2.5 py-1.5">
+                              <PackageCheck className="h-3 w-3 shrink-0 text-green-600 dark:text-green-400" />
+                              <p className="text-xs text-green-700 dark:text-green-400">
+                                Issued {formatTimestamp(item.givenAt)}
+                                {item.givenBy && <> · {item.givenBy}</>}
+                              </p>
                             </div>
-
-                            {item.givenAt && (
-                              <div className="flex items-center gap-1.5 rounded-md bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 px-2.5 py-1.5">
-                                <PackageCheck className="h-3 w-3 shrink-0 text-green-600 dark:text-green-400" />
-                                <p className="text-xs text-green-700 dark:text-green-400">
-                                  Issued {formatTimestamp(item.givenAt)}
-                                  {item.givenBy && <> · {item.givenBy}</>}
-                                </p>
-                              </div>
-                            )}
-
-                            {isEditing && (
-                              <SizingEditor
-                                itemType={item.itemType}
-                                initial={{ size: item.size, sizingDetails: item.sizingDetails, needSizing: item.needSizing }}
-                                onSave={(draft) => handleEditSave(order, item.id, draft)}
-                                onCancel={() => setEditingItemId(null)}
-                              />
-                            )}
-
-                            {/* QM notes (read-only for cadets) */}
-                            {item.qmNotes.length > 0 && (
-                              <div className="space-y-1 border-t pt-2">
-                                {item.qmNotes.map((note) => (
-                                  <div key={note.id} className="rounded bg-background border px-2.5 py-1.5 space-y-0.5">
-                                    <p className="text-xs whitespace-pre-wrap">{note.content}</p>
-                                    <p className="text-[10px] text-muted-foreground">{note.addedBy} · {formatTimestamp(note.timestamp)}</p>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </li>
-                        )
-                      })}
+                          )}
+                        </li>
+                      ))}
                     </ul>
 
-                    {/* Add item */}
-                    {addingToId === order.id ? (
-                      <AddItemRow
-                        existingTypes={existingTypes}
-                        onAdd={(draft) => handleAddItem(order, draft)}
-                        onCancel={() => setAddingToId(null)}
+                    {addingToBadgeId === order.id ? (
+                      <AddBadgeRow
+                        onAdd={(badgeName) => handleAddBadge(order, badgeName)}
+                        onCancel={() => setAddingToBadgeId(null)}
                       />
                     ) : (
                       <Button size="sm" variant="outline" className="w-full h-8 text-xs"
-                        disabled={isSaving || existingTypes.size >= ITEM_TYPES.length}
-                        onClick={() => { setAddingToId(order.id); setEditingItemId(null) }}>
+                        disabled={isSaving}
+                        onClick={() => { setAddingToBadgeId(order.id); setAddingToId(null) }}>
                         <Plus className="mr-1.5 h-3.5 w-3.5" />
-                        Add Item
+                        Add Badge
                       </Button>
                     )}
 
-                    {/* Cancel order */}
-                    {confirmCancelId === order.id ? (
+                    {confirmCancelBadgeId === order.id ? (
                       <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 space-y-2">
-                        <p className="text-sm font-medium text-destructive">Cancel this order?</p>
-                        <p className="text-xs text-muted-foreground">This cannot be undone. Any items not yet issued will be removed.</p>
+                        <p className="text-sm font-medium text-destructive">Cancel this badge order?</p>
+                        <p className="text-xs text-muted-foreground">This cannot be undone.</p>
                         <div className="flex gap-2">
                           <Button size="sm" variant="destructive" className="h-7 px-3 text-xs"
                             disabled={isSaving}
-                            onClick={() => cancelOrder(order.id)}>
+                            onClick={() => cancelBadgeOrder(order.id)}>
                             {isSaving ? "Cancelling…" : "Yes, cancel order"}
                           </Button>
                           <Button size="sm" variant="ghost" className="h-7 px-2 text-xs"
-                            onClick={() => setConfirmCancelId(null)}>
+                            onClick={() => setConfirmCancelBadgeId(null)}>
                             Keep order
                           </Button>
                         </div>
@@ -544,7 +850,7 @@ export default function MyOrdersPage() {
                         <Button size="sm" variant="ghost"
                           className="h-7 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
                           disabled={isSaving}
-                          onClick={() => setConfirmCancelId(order.id)}>
+                          onClick={() => setConfirmCancelBadgeId(order.id)}>
                           <X className="mr-1 h-3.5 w-3.5" />
                           Cancel order
                         </Button>
@@ -559,17 +865,75 @@ export default function MyOrdersPage() {
       )}
 
       {/* Completed orders */}
-      {completedOrders.length > 0 && (
+      {allCompleted.length > 0 && (
         <section className="space-y-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Completed</h2>
-          {completedOrders.map((order) => {
-            const expanded = expandedIds.has(order.id)
+          {allCompleted.map((entry) => {
+            const expanded = expandedIds.has(entry.key)
 
+            if (entry.kind === "uniform") {
+              const order = entry.order
+              return (
+                <Card key={entry.key} className="opacity-75">
+                  <CardHeader className="pb-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0 flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-0.5 text-[10px] font-medium">
+                          <Shirt className="h-3 w-3" /> Uniform
+                        </span>
+                        <p className="text-xs text-muted-foreground">{formatTimestamp(order.timestamp)}</p>
+                        <Badge className="text-xs bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400">
+                          Completed
+                        </Badge>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <Badge variant="secondary" className="text-xs">
+                          {order.items.length} item{order.items.length !== 1 ? "s" : ""}
+                        </Badge>
+                        <Button size="icon" variant="ghost" className="h-8 w-8"
+                          onClick={() => toggleExpand(entry.key)}>
+                          {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  {expanded && (
+                    <CardContent className="pt-4">
+                      <ul className="space-y-2">
+                        {order.items.map((item) => (
+                          <li key={item.id} className="rounded-md border bg-muted/30 p-3 space-y-1">
+                            <p className="text-sm font-medium">{item.itemType}</p>
+                            {item.needSizing
+                              ? <SizingDetailsDisplay raw={item.sizingDetails} />
+                              : <p className="text-xs text-muted-foreground">Size: {item.size || "—"}</p>}
+                            {item.givenAt && (
+                              <div className="flex items-center gap-1.5 rounded-md bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 px-2.5 py-1.5">
+                                <PackageCheck className="h-3 w-3 shrink-0 text-green-600 dark:text-green-400" />
+                                <p className="text-xs text-green-700 dark:text-green-400">
+                                  Issued {formatTimestamp(item.givenAt)}
+                                  {item.givenBy && <> · {item.givenBy}</>}
+                                </p>
+                              </div>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  )}
+                </Card>
+              )
+            }
+
+            // Completed badge order
+            const order = entry.order
             return (
-              <Card key={order.id} className="opacity-75">
+              <Card key={entry.key} className="opacity-75">
                 <CardHeader className="pb-0">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex-1 min-w-0 flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-0.5 text-[10px] font-medium">
+                        <Award className="h-3 w-3" /> Badge
+                      </span>
                       <p className="text-xs text-muted-foreground">{formatTimestamp(order.timestamp)}</p>
                       <Badge className="text-xs bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400">
                         Completed
@@ -577,10 +941,10 @@ export default function MyOrdersPage() {
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       <Badge variant="secondary" className="text-xs">
-                        {order.items.length} item{order.items.length !== 1 ? "s" : ""}
+                        {order.items.length} badge{order.items.length !== 1 ? "s" : ""}
                       </Badge>
                       <Button size="icon" variant="ghost" className="h-8 w-8"
-                        onClick={() => toggleExpand(order.id)}>
+                        onClick={() => toggleExpand(entry.key)}>
                         {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                       </Button>
                     </div>
@@ -591,10 +955,7 @@ export default function MyOrdersPage() {
                     <ul className="space-y-2">
                       {order.items.map((item) => (
                         <li key={item.id} className="rounded-md border bg-muted/30 p-3 space-y-1">
-                          <p className="text-sm font-medium">{item.itemType}</p>
-                          {item.needSizing
-                            ? <SizingDetailsDisplay raw={item.sizingDetails} />
-                            : <p className="text-xs text-muted-foreground">Size: {item.size || "—"}</p>}
+                          <p className="text-sm font-medium">{item.badgeName}</p>
                           {item.givenAt && (
                             <div className="flex items-center gap-1.5 rounded-md bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 px-2.5 py-1.5">
                               <PackageCheck className="h-3 w-3 shrink-0 text-green-600 dark:text-green-400" />
