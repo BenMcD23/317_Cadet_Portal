@@ -9,7 +9,6 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
   LogOut,
-  Shield,
   PanelLeftClose,
   PanelLeftOpen,
   Menu,
@@ -29,9 +28,9 @@ type NavItem = {
 
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard },
-  { label: "My Orders", href: "/orders/my-orders", icon: ClipboardList },
-  { label: "Uniform Order", href: "/orders/uniform", icon: Shirt },
-  { label: "Badge Order", href: "/orders/badges", icon: Award },
+  { label: "My Orders", href: "/my-orders", icon: ClipboardList },
+  { label: "Uniform Order", href: "/uniform-order", icon: Shirt },
+  { label: "Badge Order", href: "/badge-order", icon: Award },
 ]
 
 function ThemeToggle() {
@@ -71,14 +70,16 @@ function SidebarContent({
           collapsed ? "justify-center px-2 py-4" : "justify-between px-5 py-4"
         )}
       >
+        {/* eslint-disable @next/next/no-img-element */}
         {collapsed ? (
-          <Shield className="h-6 w-6 text-primary" />
+          <img src="/317_logo.png" alt="317 ATC" width={28} height={28} />
         ) : (
           <div className="flex items-center gap-2">
-            <Shield className="h-6 w-6 text-primary" />
-            <span className="text-lg font-semibold tracking-tight">317 Cadets</span>
+            <img src="/317_logo.png" alt="317 ATC" width={28} height={28} />
+            <span className="text-lg font-semibold tracking-tight">317 Cadet Portal</span>
           </div>
         )}
+        {/* eslint-enable @next/next/no-img-element */}
         <button
           onClick={onToggleCollapse}
           className={cn(
@@ -239,8 +240,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Menu className="h-5 w-5" />
           </button>
           <div className="flex items-center gap-2 md:hidden">
-            <Shield className="h-5 w-5 text-primary" />
-            <span className="font-semibold tracking-tight">317 Cadets</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/317_logo.png" alt="317 ATC" width={24} height={24} />
+            <span className="font-semibold tracking-tight">317 Cadet Portal</span>
           </div>
           <div className="hidden md:block" />
           <ThemeToggle />

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -331,6 +331,11 @@ export default function UniformOrderPage() {
   const [selectorOpen, setSelectorOpen] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isCadet, setIsCadet] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    fetch("/api/cadet/me").then((r) => setIsCadet(r.ok))
+  }, [])
 
   function toggleItem(itemType: string) {
     setSelectedItems((prev) => {
@@ -372,7 +377,8 @@ export default function UniformOrderPage() {
     setSubmitting(true)
     try {
       const items = ITEM_TYPES.filter((t) => selectedItems.has(t)).map((t) => entryToApiItem(entries[t]))
-      const res = await fetch("/api/cadet/orders", {
+      const endpoint = isCadet === false ? "/api/user/orders" : "/api/cadet/orders"
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ items }),
@@ -386,7 +392,7 @@ export default function UniformOrderPage() {
         setError(data.detail ?? "Something went wrong. Please try again.")
         return
       }
-      router.push("/orders/my-orders")
+      router.push("/my-orders")
     } catch {
       setError("Network error. Please check your connection and try again.")
     } finally {

@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { signIn } from "next-auth/react"
-import { Shield } from "lucide-react"
 
 export default function LoginPage() {
   return (
@@ -11,9 +10,8 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm shadow-xl">
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-2xl border-2 border-slate-200 bg-white shadow-md dark:border-slate-800 dark:bg-slate-900">
-              <Shield className="h-10 w-10 text-primary" />
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/317_logo.png" alt="317 ATC Badge" width={120} height={120} />
           </div>
           <div className="space-y-1">
             <CardTitle className="text-2xl font-bold tracking-tight">317 Cadet Portal</CardTitle>

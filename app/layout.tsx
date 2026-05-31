@@ -17,6 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "317 Cadet Portal",
   description: "317 ATC Cadet Portal",
+  icons: { icon: "/icon.png" },
 }
 
 export default function RootLayout({

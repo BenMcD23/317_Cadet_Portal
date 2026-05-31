@@ -9,7 +9,11 @@ export const authConfig: NextAuthConfig = {
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       authorization: {
-        params: { scope: "openid email profile" },
+        params: {
+          scope: "openid email profile",
+          access_type: "offline",
+          prompt: "consent",
+        },
       },
     }),
   ],
@@ -29,6 +33,13 @@ export const authConfig: NextAuthConfig = {
 
       if (!isLoggedIn) return Response.redirect(new URL("/login", nextUrl))
       if (isUnauthorizedPage) return true
+
+      // Token has expired and could not be refreshed — force re-login
+      if (auth.error) {
+        const signOutUrl = new URL("/api/auth/signout", nextUrl)
+        signOutUrl.searchParams.set("callbackUrl", "/login")
+        return Response.redirect(signOutUrl)
+      }
 
       const email = auth.user?.email ?? ""
       if (!email.endsWith(`@${ALLOWED_DOMAIN}`)) {

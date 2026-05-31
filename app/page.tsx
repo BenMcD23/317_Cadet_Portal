@@ -1,18 +1,62 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Shirt, Award, ClipboardList } from "lucide-react"
 
-const QUICK_LINKS = [
-  { href: "/orders/uniform", icon: Shirt, title: "Uniform Order", desc: "Request new uniform items or replacements." },
-  { href: "/orders/badges", icon: Award, title: "Badge Order", desc: "Order proficiency badges you have qualified for." },
-  { href: "/orders/my-orders", icon: ClipboardList, title: "My Orders", desc: "View and manage your submitted orders." },
+const ISSUANCE_CATEGORIES = [
+  "Beret",
+  "Wedgewood Shirt",
+  "Working Blue Shirt",
+  "Jumper",
+  "Slacks/Trousers",
+  "Skirt",
+  "Tie",
+  "Brassard",
+  "Belt",
 ]
+
+const QUICK_LINKS = [
+  { href: "/uniform-order", icon: Shirt, title: "Uniform Order", desc: "Request new uniform items or replacements." },
+  { href: "/badge-order", icon: Award, title: "Badge Order", desc: "Order proficiency badges you have qualified for." },
+  { href: "/my-orders", icon: ClipboardList, title: "My Orders", desc: "View and manage your submitted orders." },
+]
+
+type Issuance = {
+  id: number
+  itemCategory: string
+  lastGiven: string
+  sizeGiven: string | null
+}
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
+}
 
 export default function HomePage() {
   const { data: session } = useSession()
+  const [issuances, setIssuances] = useState<Issuance[] | null>(null)
+
+  useEffect(() => {
+    async function load() {
+      const cadetRes = await fetch("/api/cadet/issuances").catch(() => null)
+      if (cadetRes?.ok) {
+        const data = await cadetRes.json()
+        setIssuances(Array.isArray(data) ? data : null)
+        return
+      }
+      const userRes = await fetch("/api/user/issuances").catch(() => null)
+      if (userRes?.ok) {
+        const data = await userRes.json()
+        setIssuances(Array.isArray(data) ? data : null)
+      } else {
+        setIssuances(null)
+      }
+    }
+    load()
+  }, [])
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
@@ -36,6 +80,39 @@ export default function HomePage() {
           </Link>
         ))}
       </div>
+
+      {issuances !== null && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Shirt className="h-4 w-4 text-muted-foreground" />
+              Uniform Issuances
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="divide-y">
+              {ISSUANCE_CATEGORIES.map((category) => {
+                const record = issuances.find((i) => i.itemCategory === category)
+                return (
+                  <div key={category} className="flex items-center justify-between gap-4 px-6 py-3">
+                    <span className="text-sm font-medium">{category}</span>
+                    {record ? (
+                      <div className="text-right">
+                        <p className="text-sm text-muted-foreground">{formatDate(record.lastGiven)}</p>
+                        {record.sizeGiven && (
+                          <p className="text-xs text-muted-foreground">Size: {record.sizeGiven}</p>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground italic">N/A</span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }
