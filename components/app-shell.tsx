@@ -19,7 +19,6 @@ import {
   LayoutDashboard,
   ClipboardList,
 } from "lucide-react"
-import Image from "next/image"
 
 type NavItem = {
   label: string
@@ -71,14 +70,16 @@ function SidebarContent({
           collapsed ? "justify-center px-2 py-4" : "justify-between px-5 py-4"
         )}
       >
+        {/* eslint-disable @next/next/no-img-element */}
         {collapsed ? (
-          <Image src="/317_logo.svg" alt="317 ATC" width={28} height={28} unoptimized />
+          <img src="/317_logo.png" alt="317 ATC" width={28} height={28} />
         ) : (
           <div className="flex items-center gap-2">
-            <Image src="/317_logo.svg" alt="317 ATC" width={28} height={28} unoptimized />
-            <span className="text-lg font-semibold tracking-tight">317 Cadets</span>
+            <img src="/317_logo.png" alt="317 ATC" width={28} height={28} />
+            <span className="text-lg font-semibold tracking-tight">317 Cadet Portal</span>
           </div>
         )}
+        {/* eslint-enable @next/next/no-img-element */}
         <button
           onClick={onToggleCollapse}
           className={cn(
@@ -239,8 +240,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Menu className="h-5 w-5" />
           </button>
           <div className="flex items-center gap-2 md:hidden">
-            <Image src="/317_logo.svg" alt="317 ATC" width={24} height={24} unoptimized />
-            <span className="font-semibold tracking-tight">317 Cadets</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/317_logo.png" alt="317 ATC" width={24} height={24} />
+            <span className="font-semibold tracking-tight">317 Cadet Portal</span>
           </div>
           <div className="hidden md:block" />
           <ThemeToggle />

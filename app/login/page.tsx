@@ -11,7 +11,7 @@ export default function LoginPage() {
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/317_logo.svg" alt="317 ATC Badge" width={120} height={120} />
+            <img src="/317_logo.png" alt="317 ATC Badge" width={120} height={120} />
           </div>
           <div className="space-y-1">
             <CardTitle className="text-2xl font-bold tracking-tight">317 Cadet Portal</CardTitle>
