@@ -9,7 +9,6 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
   LogOut,
-  Shield,
   PanelLeftClose,
   PanelLeftOpen,
   Menu,
@@ -20,6 +19,7 @@ import {
   LayoutDashboard,
   ClipboardList,
 } from "lucide-react"
+import Image from "next/image"
 
 type NavItem = {
   label: string
@@ -72,10 +72,10 @@ function SidebarContent({
         )}
       >
         {collapsed ? (
-          <Shield className="h-6 w-6 text-primary" />
+          <Image src="/317_logo.svg" alt="317 ATC" width={28} height={28} unoptimized />
         ) : (
           <div className="flex items-center gap-2">
-            <Shield className="h-6 w-6 text-primary" />
+            <Image src="/317_logo.svg" alt="317 ATC" width={28} height={28} unoptimized />
             <span className="text-lg font-semibold tracking-tight">317 Cadets</span>
           </div>
         )}
@@ -239,7 +239,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Menu className="h-5 w-5" />
           </button>
           <div className="flex items-center gap-2 md:hidden">
-            <Shield className="h-5 w-5 text-primary" />
+            <Image src="/317_logo.svg" alt="317 ATC" width={24} height={24} unoptimized />
             <span className="font-semibold tracking-tight">317 Cadets</span>
           </div>
           <div className="hidden md:block" />
