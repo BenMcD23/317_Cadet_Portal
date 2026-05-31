@@ -40,10 +40,22 @@ export default function HomePage() {
   const [issuances, setIssuances] = useState<Issuance[] | null>(null)
 
   useEffect(() => {
-    fetch("/api/cadet/issuances")
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => setIssuances(Array.isArray(data) ? data : null))
-      .catch(() => setIssuances(null))
+    async function load() {
+      const cadetRes = await fetch("/api/cadet/issuances").catch(() => null)
+      if (cadetRes?.ok) {
+        const data = await cadetRes.json()
+        setIssuances(Array.isArray(data) ? data : null)
+        return
+      }
+      const userRes = await fetch("/api/user/issuances").catch(() => null)
+      if (userRes?.ok) {
+        const data = await userRes.json()
+        setIssuances(Array.isArray(data) ? data : null)
+      } else {
+        setIssuances(null)
+      }
+    }
+    load()
   }, [])
 
   return (

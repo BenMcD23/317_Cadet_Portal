@@ -488,14 +488,16 @@ export default function MyOrdersPage() {
     setLoading(true)
     setError(null)
     try {
+      const meRes = await fetch("/api/cadet/me")
+      const isCadet = meRes.ok
+      const uniformEndpoint = isCadet ? "/api/cadet/orders" : "/api/user/orders"
       const [uRes, bRes] = await Promise.all([
-        fetch("/api/cadet/orders"),
-        fetch("/api/cadet/badge-orders"),
+        fetch(uniformEndpoint),
+        isCadet ? fetch("/api/cadet/badge-orders") : Promise.resolve(new Response("[]")),
       ])
       if (!uRes.ok) throw new Error("Failed to load uniform orders")
-      if (!bRes.ok) throw new Error("Failed to load badge orders")
       setUniformOrders(await uRes.json())
-      setBadgeOrders(await bRes.json())
+      setBadgeOrders(bRes.ok ? await bRes.json() : [])
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unknown error")
     } finally {
@@ -513,10 +515,18 @@ export default function MyOrdersPage() {
 
   // ─── Uniform order actions ──────────────────────────────────────────────────
 
+  function orderEndpoint(orderId: string) {
+    const order = uniformOrders.find((o) => o.id === orderId)
+    const base = order && (order as { subjectType?: string }).subjectType === "user"
+      ? "/api/user/orders"
+      : "/api/cadet/orders"
+    return `${base}/${orderId}`
+  }
+
   async function patchOrder(orderId: string, items: DraftItem[]) {
     setSavingId(orderId)
     try {
-      const res = await fetch(`/api/cadet/orders/${orderId}`, {
+      const res = await fetch(orderEndpoint(orderId), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ items }),
@@ -534,7 +544,7 @@ export default function MyOrdersPage() {
   async function cancelOrder(orderId: string) {
     setSavingId(orderId)
     try {
-      const res = await fetch(`/api/cadet/orders/${orderId}`, { method: "DELETE" })
+      const res = await fetch(orderEndpoint(orderId), { method: "DELETE" })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
         throw new Error(data.detail ?? "Failed to cancel order")
