@@ -6,9 +6,9 @@ import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/ca
 import { Shirt, Award, ClipboardList } from "lucide-react"
 
 const QUICK_LINKS = [
-  { href: "/orders/uniform", icon: Shirt, title: "Uniform Order", desc: "Request new uniform items or replacements." },
-  { href: "/orders/badges", icon: Award, title: "Badge Order", desc: "Order proficiency badges you have qualified for." },
-  { href: "/orders/my-orders", icon: ClipboardList, title: "My Orders", desc: "View and manage your submitted orders." },
+  { href: "/uniform-order", icon: Shirt, title: "Uniform Order", desc: "Request new uniform items or replacements." },
+  { href: "/badge-order", icon: Award, title: "Badge Order", desc: "Order proficiency badges you have qualified for." },
+  { href: "/my-orders", icon: ClipboardList, title: "My Orders", desc: "View and manage your submitted orders." },
 ]
 
 export default function HomePage() {

@@ -645,20 +645,6 @@ export default function MyOrdersPage() {
           <h1 className="text-2xl font-bold">My Orders</h1>
           {!loading && <p className="text-sm text-muted-foreground">{totalCount} order{totalCount !== 1 ? "s" : ""}</p>}
         </div>
-        <div className="flex gap-2">
-          <Link href="/orders/uniform">
-            <Button size="sm" variant="outline">
-              <Shirt className="mr-1.5 h-4 w-4" />
-              Uniform
-            </Button>
-          </Link>
-          <Link href="/orders/badges">
-            <Button size="sm" variant="outline">
-              <Award className="mr-1.5 h-4 w-4" />
-              Badge
-            </Button>
-          </Link>
-        </div>
       </div>
 
       {error && (
@@ -673,13 +659,13 @@ export default function MyOrdersPage() {
         <div className="rounded-md border border-dashed p-8 text-center space-y-4">
           <p className="text-sm text-muted-foreground">You have no orders yet.</p>
           <div className="flex justify-center gap-2">
-            <Link href="/orders/uniform">
+            <Link href="/uniform-order">
               <Button size="sm" variant="outline">
                 <Shirt className="mr-1.5 h-4 w-4" />
                 Place Uniform Order
               </Button>
             </Link>
-            <Link href="/orders/badges">
+            <Link href="/badge-order">
               <Button size="sm" variant="outline">
                 <Award className="mr-1.5 h-4 w-4" />
                 Place Badge Order

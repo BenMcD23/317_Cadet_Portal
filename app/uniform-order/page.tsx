@@ -386,7 +386,7 @@ export default function UniformOrderPage() {
         setError(data.detail ?? "Something went wrong. Please try again.")
         return
       }
-      router.push("/orders/my-orders")
+      router.push("/my-orders")
     } catch {
       setError("Network error. Please check your connection and try again.")
     } finally {
