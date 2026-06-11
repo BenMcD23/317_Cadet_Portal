@@ -7,10 +7,14 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
+import { PageHeader } from "@/components/page-header"
+import { ErrorAlert } from "@/components/error-alert"
 import { SizeCombobox } from "@/components/size-combobox"
 import { ITEM_TYPES, NO_SIZE_ITEMS, WAIST_LEG_ITEMS, CHEST_ITEMS, COLLAR_ITEMS, SEAT_ITEMS, HIPS_ITEMS } from "@/lib/uniform-items"
 import { cn } from "@/lib/utils"
-import { ChevronDown, ChevronUp, Plus, Trash2, PackageCheck, Pencil, X, Shirt, Award } from "lucide-react"
+import { ChevronDown, ChevronUp, Plus, Trash2, PackageCheck, Pencil, X, Shirt, Award, ClipboardList } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BADGE_CATEGORIES, BadgeCategory, buildBadgeName } from "@/lib/badge-types"
@@ -649,40 +653,48 @@ export default function MyOrdersPage() {
   const totalCount = uniformOrders.length + badgeOrders.length
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8 pb-16">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">My Orders</h1>
-          {!loading && <p className="text-sm text-muted-foreground">{totalCount} order{totalCount !== 1 ? "s" : ""}</p>}
-        </div>
-      </div>
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 pb-16">
+      <PageHeader
+        title="My Orders"
+        description={loading ? "Loading…" : `${totalCount} order${totalCount !== 1 ? "s" : ""}`}
+      />
 
-      {error && (
-        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {error}
+      <ErrorAlert message={error} title="Could not load your orders" />
+
+      {loading && (
+        <div className="flex flex-col gap-2">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
         </div>
       )}
 
-      {loading && <p className="text-sm text-muted-foreground">Loading your orders…</p>}
-
       {!loading && totalCount === 0 && (
-        <div className="rounded-md border border-dashed p-8 text-center space-y-4">
-          <p className="text-sm text-muted-foreground">You have no orders yet.</p>
-          <div className="flex justify-center gap-2">
-            <Link href="/uniform-order">
-              <Button size="sm" variant="outline">
-                <Shirt className="mr-1.5 h-4 w-4" />
-                Place Uniform Order
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <ClipboardList />
+            </EmptyMedia>
+            <EmptyTitle>No orders yet</EmptyTitle>
+            <EmptyDescription>Place an order and it will show up here.</EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" asChild>
+                <Link href="/uniform-order">
+                  <Shirt data-icon="inline-start" />
+                  Uniform order
+                </Link>
               </Button>
-            </Link>
-            <Link href="/badge-order">
-              <Button size="sm" variant="outline">
-                <Award className="mr-1.5 h-4 w-4" />
-                Place Badge Order
+              <Button size="sm" variant="outline" asChild>
+                <Link href="/badge-order">
+                  <Award data-icon="inline-start" />
+                  Badge order
+                </Link>
               </Button>
-            </Link>
-          </div>
-        </div>
+            </div>
+          </EmptyContent>
+        </Empty>
       )}
 
       {/* Active orders */}
@@ -703,7 +715,7 @@ export default function MyOrdersPage() {
                   <CardHeader className="pb-0">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex-1 min-w-0 flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-0.5 text-[10px] font-medium">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-medium">
                           <Shirt className="h-3 w-3" /> Uniform
                         </span>
                         <p className="text-xs text-muted-foreground">{formatTimestamp(order.timestamp)}</p>
@@ -757,9 +769,9 @@ export default function MyOrdersPage() {
                               </div>
 
                               {item.givenAt && (
-                                <div className="flex items-center gap-1.5 rounded-md bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 px-2.5 py-1.5">
-                                  <PackageCheck className="h-3 w-3 shrink-0 text-green-600 dark:text-green-400" />
-                                  <p className="text-xs text-green-700 dark:text-green-400">
+                                <div className="flex items-center gap-1.5 rounded-md bg-success/10 border border-success/30 px-2.5 py-1.5">
+                                  <PackageCheck className="h-3 w-3 shrink-0 text-success" />
+                                  <p className="text-xs text-success">
                                     Issued {formatTimestamp(item.givenAt)}
                                     {item.givenBy && <> · {item.givenBy}</>}
                                   </p>
@@ -837,7 +849,7 @@ export default function MyOrdersPage() {
                 <CardHeader className="pb-0">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex-1 min-w-0 flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-0.5 text-[10px] font-medium">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-warning/15 text-warning px-2 py-0.5 text-[10px] font-medium">
                         <Award className="h-3 w-3" /> Badge
                       </span>
                       <p className="text-xs text-muted-foreground">{formatTimestamp(order.timestamp)}</p>
@@ -873,9 +885,9 @@ export default function MyOrdersPage() {
                           </div>
 
                           {item.givenAt && (
-                            <div className="flex items-center gap-1.5 rounded-md bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 px-2.5 py-1.5">
-                              <PackageCheck className="h-3 w-3 shrink-0 text-green-600 dark:text-green-400" />
-                              <p className="text-xs text-green-700 dark:text-green-400">
+                            <div className="flex items-center gap-1.5 rounded-md bg-success/10 border border-success/30 px-2.5 py-1.5">
+                              <PackageCheck className="h-3 w-3 shrink-0 text-success" />
+                              <p className="text-xs text-success">
                                 Issued {formatTimestamp(item.givenAt)}
                                 {item.givenBy && <> · {item.givenBy}</>}
                               </p>
@@ -948,11 +960,11 @@ export default function MyOrdersPage() {
                   <CardHeader className="pb-0">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex-1 min-w-0 flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-0.5 text-[10px] font-medium">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-medium">
                           <Shirt className="h-3 w-3" /> Uniform
                         </span>
                         <p className="text-xs text-muted-foreground">{formatTimestamp(order.timestamp)}</p>
-                        <Badge className="text-xs bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400">
+                        <Badge className="text-xs border-success/40 bg-success/10 text-success">
                           Completed
                         </Badge>
                       </div>
@@ -977,9 +989,9 @@ export default function MyOrdersPage() {
                               ? <SizingDetailsDisplay raw={item.sizingDetails} />
                               : <p className="text-xs text-muted-foreground">Size: {item.size || "—"}</p>}
                             {item.givenAt && (
-                              <div className="flex items-center gap-1.5 rounded-md bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 px-2.5 py-1.5">
-                                <PackageCheck className="h-3 w-3 shrink-0 text-green-600 dark:text-green-400" />
-                                <p className="text-xs text-green-700 dark:text-green-400">
+                              <div className="flex items-center gap-1.5 rounded-md bg-success/10 border border-success/30 px-2.5 py-1.5">
+                                <PackageCheck className="h-3 w-3 shrink-0 text-success" />
+                                <p className="text-xs text-success">
                                   Issued {formatTimestamp(item.givenAt)}
                                   {item.givenBy && <> · {item.givenBy}</>}
                                 </p>
@@ -1001,11 +1013,11 @@ export default function MyOrdersPage() {
                 <CardHeader className="pb-0">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex-1 min-w-0 flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-0.5 text-[10px] font-medium">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-warning/15 text-warning px-2 py-0.5 text-[10px] font-medium">
                         <Award className="h-3 w-3" /> Badge
                       </span>
                       <p className="text-xs text-muted-foreground">{formatTimestamp(order.timestamp)}</p>
-                      <Badge className="text-xs bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400">
+                      <Badge className="text-xs border-success/40 bg-success/10 text-success">
                         Completed
                       </Badge>
                     </div>
@@ -1027,9 +1039,9 @@ export default function MyOrdersPage() {
                         <li key={item.id} className="rounded-md border bg-muted/30 p-3 space-y-1">
                           <p className="text-sm font-medium">{item.badgeName}</p>
                           {item.givenAt && (
-                            <div className="flex items-center gap-1.5 rounded-md bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 px-2.5 py-1.5">
-                              <PackageCheck className="h-3 w-3 shrink-0 text-green-600 dark:text-green-400" />
-                              <p className="text-xs text-green-700 dark:text-green-400">
+                            <div className="flex items-center gap-1.5 rounded-md bg-success/10 border border-success/30 px-2.5 py-1.5">
+                              <PackageCheck className="h-3 w-3 shrink-0 text-success" />
+                              <p className="text-xs text-success">
                                 Issued {formatTimestamp(item.givenAt)}
                                 {item.givenBy && <> · {item.givenBy}</>}
                               </p>

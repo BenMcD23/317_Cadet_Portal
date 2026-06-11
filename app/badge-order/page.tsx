@@ -2,10 +2,13 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Award, ChevronDown, ChevronUp, Plus, X } from "lucide-react"
+import { ChevronDown, ChevronUp, Plus, X } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import { Spinner } from "@/components/ui/spinner"
+import { PageHeader } from "@/components/page-header"
+import { ErrorAlert } from "@/components/error-alert"
 import {
   Select,
   SelectContent,
@@ -152,14 +155,8 @@ export default function BadgeOrderPage() {
   }
 
   return (
-    <div className="mx-auto max-w-lg space-y-6 pb-16">
-      <div className="flex items-center gap-3">
-        <Award className="h-6 w-6 text-primary" />
-        <div>
-          <h1 className="text-2xl font-bold">Badge Order</h1>
-          <p className="text-sm text-muted-foreground">Select the badges you need below.</p>
-        </div>
-      </div>
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-6 pb-16">
+      <PageHeader title="Badge Order" description="Select the badges you need below" />
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Badge selector card */}
@@ -241,15 +238,12 @@ export default function BadgeOrderPage() {
           )}
         </Card>
 
-        {error && (
-          <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error}
-          </div>
-        )}
+        <ErrorAlert message={error} title="Could not submit order" />
 
         {badgeNames.length > 0 && (
           <Button type="submit" className="w-full" disabled={submitting}>
-            {submitting ? "Submitting…" : "Submit Order"}
+            {submitting && <Spinner data-icon="inline-start" />}
+            {submitting ? "Submitting…" : "Submit order"}
           </Button>
         )}
       </form>
