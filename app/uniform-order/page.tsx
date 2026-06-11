@@ -9,8 +9,11 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { SizeCombobox } from "@/components/size-combobox"
 import { ITEM_TYPES, NO_SIZE_ITEMS, WAIST_LEG_ITEMS, CHEST_ITEMS, COLLAR_ITEMS, SEAT_ITEMS, HIPS_ITEMS } from "@/lib/uniform-items"
+import { PageHeader } from "@/components/page-header"
+import { ErrorAlert } from "@/components/error-alert"
+import { Spinner } from "@/components/ui/spinner"
 import { cn } from "@/lib/utils"
-import { Shirt, ChevronDown, ChevronUp } from "lucide-react"
+import { ChevronDown, ChevronUp } from "lucide-react"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -403,14 +406,8 @@ export default function UniformOrderPage() {
   const orderedSelected = ITEM_TYPES.filter((t) => selectedItems.has(t))
 
   return (
-    <div className="mx-auto max-w-lg space-y-6 pb-16">
-      <div className="flex items-center gap-3">
-        <Shirt className="h-6 w-6 text-primary" />
-        <div>
-          <h1 className="text-2xl font-bold">Uniform Order</h1>
-          <p className="text-sm text-muted-foreground">Select the items you need below.</p>
-        </div>
-      </div>
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-6 pb-16">
+      <PageHeader title="Uniform Order" description="Select the items you need below" />
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Item selector */}
@@ -464,15 +461,12 @@ export default function UniformOrderPage() {
           </div>
         )}
 
-        {error && (
-          <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error}
-          </div>
-        )}
+        <ErrorAlert message={error} title="Could not submit order" />
 
         {orderedSelected.length > 0 && (
           <Button type="submit" className="w-full" disabled={!isValid() || submitting}>
-            {submitting ? "Submitting…" : "Submit Order"}
+            {submitting && <Spinner data-icon="inline-start" />}
+            {submitting ? "Submitting…" : "Submit order"}
           </Button>
         )}
       </form>

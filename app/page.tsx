@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
-import { Shirt, Award, ClipboardList } from "lucide-react"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
+import { PageHeader } from "@/components/page-header"
+import { Shirt, Award, ClipboardList, ArrowRight } from "lucide-react"
 
 const ISSUANCE_CATEGORIES = [
   "Beret",
@@ -38,55 +40,67 @@ function formatDate(iso: string) {
 export default function HomePage() {
   const { data: session } = useSession()
   const [issuances, setIssuances] = useState<Issuance[] | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
-      const cadetRes = await fetch("/api/cadet/issuances").catch(() => null)
-      if (cadetRes?.ok) {
-        const data = await cadetRes.json()
-        setIssuances(Array.isArray(data) ? data : null)
-        return
-      }
-      const userRes = await fetch("/api/user/issuances").catch(() => null)
-      if (userRes?.ok) {
-        const data = await userRes.json()
-        setIssuances(Array.isArray(data) ? data : null)
-      } else {
-        setIssuances(null)
+      try {
+        const cadetRes = await fetch("/api/cadet/issuances").catch(() => null)
+        if (cadetRes?.ok) {
+          const data = await cadetRes.json()
+          setIssuances(Array.isArray(data) ? data : null)
+          return
+        }
+        const userRes = await fetch("/api/user/issuances").catch(() => null)
+        if (userRes?.ok) {
+          const data = await userRes.json()
+          setIssuances(Array.isArray(data) ? data : null)
+        } else {
+          setIssuances(null)
+        }
+      } finally {
+        setLoading(false)
       }
     }
     load()
   }, [])
 
-  return (
-    <div className="mx-auto max-w-4xl space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Welcome</h1>
-        {session?.user && (
-          <p className="text-muted-foreground">Hello, {session.user.name}</p>
-        )}
-      </div>
+  const firstName = session?.user?.name?.split(" ")[0]
 
-      <div className="grid gap-6 sm:grid-cols-3">
+  return (
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
+      <PageHeader
+        title={firstName ? `Hello, ${firstName}` : "Dashboard"}
+        description="Order uniform and badges, and see what you've been issued"
+      />
+
+      <div className="grid gap-3 sm:grid-cols-3">
         {QUICK_LINKS.map(({ href, icon: Icon, title, desc }) => (
-          <Link key={href} href={href}>
-            <Card className="h-full cursor-pointer transition-shadow hover:shadow-md">
-              <CardHeader>
-                <Icon className="mb-2 h-5 w-5 text-primary" />
-                <CardTitle className="text-base">{title}</CardTitle>
-                <CardDescription>{desc}</CardDescription>
+          <Link key={href} href={href} className="group">
+            <Card className="h-full gap-2 py-5 transition-colors group-hover:border-primary/40">
+              <CardHeader className="pb-0">
+                <div className="flex items-center justify-between">
+                  <Icon className="size-4 text-muted-foreground" />
+                  <ArrowRight className="size-3.5 text-muted-foreground/0 transition-all group-hover:translate-x-0.5 group-hover:text-muted-foreground" />
+                </div>
               </CardHeader>
+              <CardContent className="flex flex-col gap-0.5">
+                <p className="text-sm font-medium">{title}</p>
+                <p className="text-xs text-muted-foreground">{desc}</p>
+              </CardContent>
             </Card>
           </Link>
         ))}
       </div>
 
-      {issuances !== null && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Shirt className="h-4 w-4 text-muted-foreground" />
-              Uniform Issuances
+      {loading && <Skeleton className="h-72" />}
+
+      {!loading && issuances !== null && (
+        <Card className="gap-0 overflow-hidden py-0">
+          <CardHeader className="border-b py-4">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Shirt className="size-4 text-muted-foreground" />
+              Uniform issued to you
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -104,7 +118,7 @@ export default function HomePage() {
                         )}
                       </div>
                     ) : (
-                      <span className="text-xs text-muted-foreground italic">N/A</span>
+                      <span className="text-xs text-muted-foreground">Not issued</span>
                     )}
                   </div>
                 )
