@@ -4,7 +4,9 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { ChevronDown, ChevronUp, Plus, X } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Spinner } from "@/components/ui/spinner"
 import { PageHeader } from "@/components/page-header"
@@ -99,43 +101,48 @@ const LEVEL_STYLES: Record<string, { border: string; bg: string; text: string }>
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+type SelectedBadge = { badgeName: string; replacement: boolean }
+
 export default function BadgeOrderPage() {
   const router = useRouter()
 
   const [selectorOpen, setSelectorOpen] = useState(true)
-  const [badgeNames, setBadgeNames] = useState<string[]>([])
+  const [badges, setBadges] = useState<SelectedBadge[]>([])
 
   const [category, setCategory] = useState<BadgeCategory | null>(null)
   const [subType, setSubType] = useState<string | null>(null)
   const [level, setLevel] = useState<string | null>(null)
+  const [replacement, setReplacement] = useState(false)
 
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const currentBadgeName = category ? buildBadgeName(category, subType, level) : null
+  const replacementCount = badges.filter((b) => b.replacement).length
 
   function handleAddBadge() {
     if (!currentBadgeName) return
-    setBadgeNames((prev) => [...prev, currentBadgeName])
+    setBadges((prev) => [...prev, { badgeName: currentBadgeName, replacement }])
     setCategory(null)
     setSubType(null)
     setLevel(null)
+    setReplacement(false)
   }
 
   function handleRemoveBadge(idx: number) {
-    setBadgeNames((prev) => prev.filter((_, i) => i !== idx))
+    setBadges((prev) => prev.filter((_, i) => i !== idx))
   }
 
   async function handleSubmit(e: React.SyntheticEvent) {
     e.preventDefault()
-    if (badgeNames.length === 0) return
+    if (badges.length === 0) return
     setError(null)
     setSubmitting(true)
     try {
       const res = await fetch("/api/cadet/badge-orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: badgeNames.map((badgeName) => ({ badgeName })) }),
+        body: JSON.stringify({ items: badges }),
       })
       if (res.status === 404) {
         setError("You are not registered in the system. Please speak to a member of staff.")
@@ -168,9 +175,9 @@ export default function BadgeOrderPage() {
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">
                 Badges needed
-                {badgeNames.length > 0 && (
+                {badges.length > 0 && (
                   <span className="ml-2 text-sm font-normal text-muted-foreground">
-                    ({badgeNames.length} selected)
+                    ({badges.length} selected)
                   </span>
                 )}
               </CardTitle>
@@ -184,14 +191,21 @@ export default function BadgeOrderPage() {
           {selectorOpen && (
             <CardContent className="space-y-4">
               {/* Added badges list */}
-              {badgeNames.length > 0 && (
+              {badges.length > 0 && (
                 <ul className="space-y-1.5">
-                  {badgeNames.map((name, idx) => (
+                  {badges.map((badge, idx) => (
                     <li
                       key={idx}
                       className="flex items-center justify-between gap-2 rounded-md border bg-muted/30 px-3 py-2 text-sm"
                     >
-                      <span>{name}</span>
+                      <span className="flex flex-wrap items-center gap-2">
+                        {badge.badgeName}
+                        {badge.replacement && (
+                          <Badge variant="outline" className="border-amber-500/50 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                            Replacement — £2 fee
+                          </Badge>
+                        )}
+                      </span>
                       <button
                         type="button"
                         onClick={() => handleRemoveBadge(idx)}
@@ -223,6 +237,21 @@ export default function BadgeOrderPage() {
                     </div>
                   )
                 })()}
+                {currentBadgeName && (
+                  <label className="flex cursor-pointer items-start gap-2 text-sm">
+                    <Checkbox
+                      checked={replacement}
+                      onCheckedChange={(v) => setReplacement(v === true)}
+                      className="mt-0.5"
+                    />
+                    <span>
+                      This is a replacement for a lost or damaged badge
+                      <span className="block text-xs text-muted-foreground">
+                        Replacement badges cost £2
+                      </span>
+                    </span>
+                  </label>
+                )}
                 <Button
                   type="button"
                   size="sm"
@@ -240,7 +269,14 @@ export default function BadgeOrderPage() {
 
         <ErrorAlert message={error} title="Could not submit order" />
 
-        {badgeNames.length > 0 && (
+        {replacementCount > 0 && (
+          <p className="rounded-md border border-amber-500/40 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+            Replacement badges cost £2 each — please bring £{replacementCount * 2} to stores when
+            collecting.
+          </p>
+        )}
+
+        {badges.length > 0 && (
           <Button type="submit" className="w-full" disabled={submitting}>
             {submitting && <Spinner data-icon="inline-start" />}
             {submitting ? "Submitting…" : "Submit order"}
