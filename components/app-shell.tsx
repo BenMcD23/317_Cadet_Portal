@@ -19,6 +19,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import {
   DropdownMenu,
@@ -128,6 +129,12 @@ function UserMenu() {
 
 function AppSidebar() {
   const pathname = usePathname()
+  const { isMobile, setOpenMobile } = useSidebar()
+
+  // On mobile the sidebar is an overlay sheet — collapse it after navigating
+  const closeOnMobile = () => {
+    if (isMobile) setOpenMobile(false)
+  }
 
   return (
     <Sidebar collapsible="icon">
@@ -135,7 +142,7 @@ function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href="/">
+              <Link href="/" onClick={closeOnMobile}>
                 <div className="flex aspect-square size-8 items-center justify-center overflow-hidden rounded-md bg-white/90">
                   <Image src="/317_logo.png" alt="" width={28} height={28} className="size-7 object-contain" />
                 </div>
@@ -156,7 +163,7 @@ function AppSidebar() {
               {NAV_ITEMS.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton asChild tooltip={item.label} isActive={pathname === item.href}>
-                    <Link href={item.href}>
+                    <Link href={item.href} onClick={closeOnMobile}>
                       <item.icon />
                       <span>{item.label}</span>
                     </Link>
