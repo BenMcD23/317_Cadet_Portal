@@ -59,6 +59,7 @@ interface Order {
 interface BadgeItem {
   id: string
   badgeName: string
+  replacement?: boolean // replacement badges carry a £2 fee
   qmNotes: QmNote[]
   givenAt: string | null
   givenBy: string | null
@@ -425,10 +426,11 @@ function BadgePicker({
 
 // ─── Add badge inline ─────────────────────────────────────────────────────────
 
-function AddBadgeRow({ onAdd, onCancel }: { onAdd: (badgeName: string) => void; onCancel: () => void }) {
+function AddBadgeRow({ onAdd, onCancel }: { onAdd: (badgeName: string, replacement: boolean) => void; onCancel: () => void }) {
   const [category, setCategory] = useState<BadgeCategory | null>(null)
   const [subType, setSubType] = useState<string | null>(null)
   const [level, setLevel] = useState<string | null>(null)
+  const [replacement, setReplacement] = useState(false)
 
   const badgeName = category ? buildBadgeName(category, subType, level) : null
 
@@ -443,10 +445,19 @@ function AddBadgeRow({ onAdd, onCancel }: { onAdd: (badgeName: string) => void; 
         onSubType={(s) => { setSubType(s); setLevel(null) }}
         onLevel={setLevel}
       />
+      {badgeName && (
+        <label className="flex cursor-pointer items-center gap-2 text-xs">
+          <Checkbox
+            checked={replacement}
+            onCheckedChange={(v) => setReplacement(v === true)}
+          />
+          Replacement for a lost/damaged badge (£2 fee)
+        </label>
+      )}
       <div className="flex gap-2">
         <Button size="sm" className="h-7 px-3 text-xs"
           disabled={!badgeName}
-          onClick={() => { if (badgeName) onAdd(badgeName) }}>
+          onClick={() => { if (badgeName) onAdd(badgeName, replacement) }}>
           <Plus className="mr-1 h-3.5 w-3.5" />
           Add Badge
         </Button>
@@ -590,7 +601,7 @@ export default function MyOrdersPage() {
 
   // ─── Badge order actions ────────────────────────────────────────────────────
 
-  async function patchBadgeOrder(orderId: string, items: { badgeName: string }[]) {
+  async function patchBadgeOrder(orderId: string, items: { badgeName: string; replacement: boolean }[]) {
     setSavingBadgeId(orderId)
     try {
       const res = await fetch(`/api/cadet/badge-orders/${orderId}`, {
@@ -625,16 +636,18 @@ export default function MyOrdersPage() {
     }
   }
 
-  function handleAddBadge(order: BadgeOrder, badgeName: string) {
-    const nonGiven = order.items.filter((i) => !i.givenAt).map((i) => ({ badgeName: i.badgeName }))
-    patchBadgeOrder(order.id, [...nonGiven, { badgeName }])
+  function handleAddBadge(order: BadgeOrder, badgeName: string, replacement: boolean) {
+    const nonGiven = order.items
+      .filter((i) => !i.givenAt)
+      .map((i) => ({ badgeName: i.badgeName, replacement: !!i.replacement }))
+    patchBadgeOrder(order.id, [...nonGiven, { badgeName, replacement }])
     setAddingToBadgeId(null)
   }
 
   function handleRemoveBadge(order: BadgeOrder, itemId: string) {
     const remaining = order.items
       .filter((i) => !i.givenAt && i.id !== itemId)
-      .map((i) => ({ badgeName: i.badgeName }))
+      .map((i) => ({ badgeName: i.badgeName, replacement: !!i.replacement }))
     patchBadgeOrder(order.id, remaining)
   }
 
@@ -872,7 +885,14 @@ export default function MyOrdersPage() {
                       {order.items.map((item) => (
                         <li key={item.id} className="rounded-md border bg-muted/30 p-3 space-y-2">
                           <div className="flex items-start justify-between gap-2">
-                            <p className="text-sm font-medium">{item.badgeName}</p>
+                            <p className="text-sm font-medium">
+                              {item.badgeName}
+                              {item.replacement && (
+                                <span className="ml-2 rounded-md border border-amber-500/50 bg-amber-50 px-1.5 py-0.5 text-xs font-normal text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                                  Replacement — £2 fee
+                                </span>
+                              )}
+                            </p>
                             {!item.givenAt && (
                               <Button size="icon" variant="ghost"
                                 className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
@@ -899,7 +919,7 @@ export default function MyOrdersPage() {
 
                     {addingToBadgeId === order.id ? (
                       <AddBadgeRow
-                        onAdd={(badgeName) => handleAddBadge(order, badgeName)}
+                        onAdd={(badgeName, replacement) => handleAddBadge(order, badgeName, replacement)}
                         onCancel={() => setAddingToBadgeId(null)}
                       />
                     ) : (
@@ -1037,7 +1057,14 @@ export default function MyOrdersPage() {
                     <ul className="space-y-2">
                       {order.items.map((item) => (
                         <li key={item.id} className="rounded-md border bg-muted/30 p-3 space-y-1">
-                          <p className="text-sm font-medium">{item.badgeName}</p>
+                          <p className="text-sm font-medium">
+                            {item.badgeName}
+                            {item.replacement && (
+                              <span className="ml-2 rounded-md border border-amber-500/50 bg-amber-50 px-1.5 py-0.5 text-xs font-normal text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                                Replacement — £2 fee
+                              </span>
+                            )}
+                          </p>
                           {item.givenAt && (
                             <div className="flex items-center gap-1.5 rounded-md bg-success/10 border border-success/30 px-2.5 py-1.5">
                               <PackageCheck className="h-3 w-3 shrink-0 text-success" />
