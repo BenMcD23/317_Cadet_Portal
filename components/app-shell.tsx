@@ -41,6 +41,7 @@ import {
   Award,
   LayoutDashboard,
   ClipboardList,
+  FileText,
   ChevronsUpDown,
 } from "lucide-react"
 
@@ -49,6 +50,7 @@ const NAV_ITEMS = [
   { label: "My Orders", href: "/my-orders", icon: ClipboardList },
   { label: "Uniform Order", href: "/uniform-order", icon: Shirt },
   { label: "Badge Order", href: "/badge-order", icon: Award },
+  { label: "Documents", href: "/documents", icon: FileText },
 ]
 
 function currentPageTitle(pathname: string): string | null {
