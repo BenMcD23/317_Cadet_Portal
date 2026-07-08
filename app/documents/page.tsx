@@ -82,9 +82,9 @@ function DocList({ items }: { items: Doc[] }) {
           target="_blank"
           rel="noopener noreferrer"
           download
-          className="group flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-muted/50"
+          className="group flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/50 sm:gap-4 sm:px-5"
         >
-          <span className="w-14 shrink-0 rounded bg-primary px-2 py-1 text-center text-xs font-bold text-primary-foreground">
+          <span className="flex w-12 shrink-0 items-center justify-center self-stretch rounded bg-primary text-center text-xs font-bold text-primary-foreground sm:w-14">
             {fileType(item.link)}
           </span>
           <span className="grow text-sm font-medium">{item.name}</span>
