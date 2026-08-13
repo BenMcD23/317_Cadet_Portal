@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/auth"
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000"
+import { API_BASE } from "@/lib/api-base"
 
 export async function GET() {
   const session = await auth()

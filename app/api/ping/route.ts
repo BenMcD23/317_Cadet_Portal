@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000"
+import { API_BASE } from "@/lib/api-base"
 
 // Same-origin liveness probe for the API-down overlay. Runs server-side so the
 // browser never talks to the backend cross-origin (which would be CORS-blocked
