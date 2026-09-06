@@ -9,13 +9,16 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 import { PageHeader } from "@/components/page-header"
 import { ErrorAlert } from "@/components/error-alert"
-import { CheckCircle2, MessageSquare } from "lucide-react"
+import { CheckCircle2, MessageSquare, ExternalLink } from "lucide-react"
 
 type Me = {
   cin: number
   name: string
   email: string | null
   phone_number: string
+  // Empty until staff have set one — the join card only appears when there is
+  // somewhere to send people.
+  whatsapp_invite_url: string
 }
 
 export default function MyDetailsPage() {
@@ -25,6 +28,7 @@ export default function MyDetailsPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
+  const [inviteUrl, setInviteUrl] = useState("")
 
   useEffect(() => {
     async function load() {
@@ -37,6 +41,7 @@ export default function MyDetailsPage() {
         }
         setMe(data)
         setPhone(data.phone_number ?? "")
+        setInviteUrl(data.whatsapp_invite_url ?? "")
       } catch {
         setError("Could not reach the server.")
       } finally {
@@ -67,6 +72,7 @@ export default function MyDetailsPage() {
       }
       setPhone(data.phone_number ?? "")
       setMe((prev) => (prev ? { ...prev, phone_number: data.phone_number ?? "" } : prev))
+      setInviteUrl(data.whatsapp_invite_url ?? "")
       setSaved(true)
     } catch {
       setError("Could not reach the server.")
@@ -149,6 +155,29 @@ export default function MyDetailsPage() {
               Name, CIN and email come from the squadron records — speak to staff if any
               of them are wrong.
             </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Offered once there's a number saved — the texts are the thing that
+          reaches everyone, and the community is the extra on top. Hidden when
+          staff haven't set a link, so it's never a dead end. */}
+      {!loading && stored && inviteUrl && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Join the WhatsApp community</CardTitle>
+            <CardDescription>
+              Optional, and separate from the texts — you&apos;ll still get those either
+              way. Open the link on the phone your WhatsApp is on.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <Button asChild className="w-fit">
+              <a href={inviteUrl} target="_blank" rel="noopener noreferrer">
+                Open invite <ExternalLink className="size-3.5" />
+              </a>
+            </Button>
+            <p className="break-all font-mono text-xs text-muted-foreground">{inviteUrl}</p>
           </CardContent>
         </Card>
       )}
