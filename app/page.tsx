@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { PageHeader } from "@/components/page-header"
-import { Shirt, Award, ClipboardList, ArrowRight } from "lucide-react"
+import { Shirt, Award, ClipboardList, ArrowRight, MessageSquare } from "lucide-react"
 
 const ISSUANCE_CATEGORIES = [
   "Beret",
@@ -41,6 +41,23 @@ export default function HomePage() {
   const { data: session } = useSession()
   const [issuances, setIssuances] = useState<Issuance[] | null>(null)
   const [loading, setLoading] = useState(true)
+  // Only ever true for a cadet with no number saved — staff and adults have no
+  // /cadets/me record, so they never see the prompt.
+  const [needsPhone, setNeedsPhone] = useState(false)
+
+  useEffect(() => {
+    async function loadPhone() {
+      try {
+        const res = await fetch("/api/cadet/me")
+        if (!res.ok) return
+        const me = await res.json()
+        setNeedsPhone(!me.phone_number)
+      } catch {
+        // A dashboard prompt isn't worth an error banner.
+      }
+    }
+    loadPhone()
+  }, [])
 
   useEffect(() => {
     async function load() {
@@ -73,6 +90,23 @@ export default function HomePage() {
         title={firstName ? `Hello, ${firstName}` : "Dashboard"}
         description="Order uniform and badges, and see what you've been issued"
       />
+
+      {needsPhone && (
+        <Link href="/my-details" className="group">
+          <Card className="gap-2 border-primary/40 py-4 transition-colors group-hover:border-primary">
+            <CardContent className="flex items-center gap-3">
+              <MessageSquare className="size-4 shrink-0 text-muted-foreground" />
+              <div className="flex flex-col gap-0.5">
+                <p className="text-sm font-medium">Add your mobile number</p>
+                <p className="text-xs text-muted-foreground">
+                  You&apos;re not getting the parade night texts yet — add a number in My Details.
+                </p>
+              </div>
+              <ArrowRight className="ml-auto size-3.5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+            </CardContent>
+          </Card>
+        </Link>
+      )}
 
       <div className="grid gap-3 sm:grid-cols-3">
         {QUICK_LINKS.map(({ href, icon: Icon, title, desc }) => (

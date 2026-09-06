@@ -43,6 +43,7 @@ import {
   ClipboardList,
   FileText,
   ChevronsUpDown,
+  UserRound,
 } from "lucide-react"
 
 const NAV_ITEMS = [
@@ -51,6 +52,7 @@ const NAV_ITEMS = [
   { label: "Uniform Order", href: "/uniform-order", icon: Shirt },
   { label: "Badge Order", href: "/badge-order", icon: Award },
   { label: "Documents", href: "/documents", icon: FileText },
+  { label: "My Details", href: "/my-details", icon: UserRound },
 ]
 
 function currentPageTitle(pathname: string): string | null {
