@@ -100,9 +100,7 @@ export default function MyDetailsPage() {
               Parade night texts
             </CardTitle>
             <CardDescription>
-              This is where the weekly texts about uniform, timings and C Flight go.
-              Change it whenever your number changes — no need to tell staff. Leave it
-              empty to stop receiving them.
+              This is for the weekly texts. Change it whenever your number changes - no need to tell staff.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
@@ -167,8 +165,7 @@ export default function MyDetailsPage() {
           <CardHeader>
             <CardTitle className="text-base">Join the WhatsApp community</CardTitle>
             <CardDescription>
-              Optional, and separate from the texts — you&apos;ll still get those either
-              way. Open the link on the phone your WhatsApp is on.
+              Open the link on the phone your WhatsApp is on.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
