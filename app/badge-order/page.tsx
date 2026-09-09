@@ -26,6 +26,7 @@ import {
   GAINED_WHERE_OPTIONS,
   gainedWhereNeedsDates,
   gainedWhereLabel,
+  needsGainedWhere,
 } from "@/lib/badge-types"
 
 // ─── Badge picker ─────────────────────────────────────────────────────────────
@@ -208,7 +209,7 @@ const LEVEL_STYLES: Record<string, { border: string; bg: string; text: string }>
 type SelectedBadge = {
   badgeName: string
   replacement: boolean
-  gainedWhere: string
+  gainedWhere: string | null
   gainedWhereDetail: string
   gainedDateFrom: string
   gainedDateTo: string
@@ -230,17 +231,19 @@ export default function BadgeOrderPage() {
   const [error, setError] = useState<string | null>(null)
 
   const currentBadgeName = category ? buildBadgeName(category, subType, level) : null
+  const gainedWhereApplies = needsGainedWhere(category?.id, replacement)
   const replacementCount = badges.filter((b) => b.replacement).length
 
   function handleAddBadge() {
-    if (!currentBadgeName || !isGainedWhereComplete(gainedWhere)) return
+    if (!currentBadgeName) return
+    if (gainedWhereApplies && !isGainedWhereComplete(gainedWhere)) return
     setBadges((prev) => [...prev, {
       badgeName: currentBadgeName,
       replacement,
-      gainedWhere: gainedWhere.gainedWhere!,
-      gainedWhereDetail: gainedWhere.gainedWhereDetail,
-      gainedDateFrom: gainedWhere.gainedDateFrom,
-      gainedDateTo: gainedWhere.gainedDateTo,
+      gainedWhere: gainedWhereApplies ? gainedWhere.gainedWhere : null,
+      gainedWhereDetail: gainedWhereApplies ? gainedWhere.gainedWhereDetail : "",
+      gainedDateFrom: gainedWhereApplies ? gainedWhere.gainedDateFrom : "",
+      gainedDateTo: gainedWhereApplies ? gainedWhere.gainedDateTo : "",
     }])
     setCategory(null)
     setSubType(null)
@@ -327,7 +330,9 @@ export default function BadgeOrderPage() {
                             </Badge>
                           )}
                         </span>
-                        <span className="block text-xs text-muted-foreground">{gainedWhereSummary(badge)}</span>
+                        {gainedWhereSummary(badge) && (
+                          <span className="block text-xs text-muted-foreground">{gainedWhereSummary(badge)}</span>
+                        )}
                       </span>
                       <button
                         type="button"
@@ -375,14 +380,14 @@ export default function BadgeOrderPage() {
                     </span>
                   </label>
                 )}
-                {currentBadgeName && (
+                {currentBadgeName && gainedWhereApplies && (
                   <GainedWhereFields value={gainedWhere} onChange={setGainedWhere} />
                 )}
                 <Button
                   type="button"
                   size="sm"
                   variant="outline"
-                  disabled={!currentBadgeName || !isGainedWhereComplete(gainedWhere)}
+                  disabled={!currentBadgeName || (gainedWhereApplies && !isGainedWhereComplete(gainedWhere))}
                   onClick={handleAddBadge}
                 >
                   <Plus className="mr-1.5 h-3.5 w-3.5" />

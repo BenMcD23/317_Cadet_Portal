@@ -24,6 +24,7 @@ import {
   GAINED_WHERE_OPTIONS,
   gainedWhereNeedsDates,
   gainedWhereLabel,
+  needsGainedWhere,
 } from "@/lib/badge-types"
 import {
   Dialog,
@@ -536,6 +537,13 @@ function AddBadgeRow({ onAdd, onCancel }: {
   const [gainedWhere, setGainedWhere] = useState<GainedWhereState>(emptyGainedWhere())
 
   const badgeName = category ? buildBadgeName(category, subType, level) : null
+  const gainedWhereApplies = needsGainedWhere(category?.id, replacement)
+
+  function handleAdd() {
+    if (!badgeName) return
+    if (gainedWhereApplies && !isGainedWhereComplete(gainedWhere)) return
+    onAdd(badgeName, replacement, gainedWhereApplies ? gainedWhere : emptyGainedWhere())
+  }
 
   return (
     <div className="rounded-md border border-dashed p-3 space-y-3">
@@ -557,13 +565,13 @@ function AddBadgeRow({ onAdd, onCancel }: {
           Replacement for a lost/damaged badge (£2 fee)
         </label>
       )}
-      {badgeName && (
+      {badgeName && gainedWhereApplies && (
         <GainedWhereFields value={gainedWhere} onChange={setGainedWhere} />
       )}
       <div className="flex gap-2">
         <Button size="sm" className="h-7 px-3 text-xs"
-          disabled={!badgeName || !isGainedWhereComplete(gainedWhere)}
-          onClick={() => { if (badgeName) onAdd(badgeName, replacement, gainedWhere) }}>
+          disabled={!badgeName || (gainedWhereApplies && !isGainedWhereComplete(gainedWhere))}
+          onClick={handleAdd}>
           <Plus className="mr-1 h-3.5 w-3.5" />
           Add Badge
         </Button>
