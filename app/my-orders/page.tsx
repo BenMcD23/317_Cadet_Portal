@@ -17,7 +17,14 @@ import { cn } from "@/lib/utils"
 import { ChevronDown, ChevronUp, Plus, Trash2, PackageCheck, Pencil, X, Shirt, Award, ClipboardList } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { BADGE_CATEGORIES, BadgeCategory, buildBadgeName } from "@/lib/badge-types"
+import {
+  BADGE_CATEGORIES,
+  BadgeCategory,
+  buildBadgeName,
+  GAINED_WHERE_OPTIONS,
+  gainedWhereNeedsDates,
+  gainedWhereLabel,
+} from "@/lib/badge-types"
 import {
   Dialog,
   DialogContent,
@@ -63,6 +70,10 @@ interface BadgeItem {
   qmNotes: QmNote[]
   givenAt: string | null
   givenBy: string | null
+  gainedWhere?: string | null
+  gainedWhereDetail?: string | null
+  gainedDateFrom?: string | null
+  gainedDateTo?: string | null
 }
 
 interface BadgeOrder {
@@ -424,13 +435,105 @@ function BadgePicker({
   )
 }
 
+// ─── Gained where ─────────────────────────────────────────────────────────────
+
+type GainedWhereState = {
+  gainedWhere: string | null
+  gainedWhereDetail: string
+  gainedDateFrom: string
+  gainedDateTo: string
+}
+
+function emptyGainedWhere(): GainedWhereState {
+  return { gainedWhere: null, gainedWhereDetail: "", gainedDateFrom: "", gainedDateTo: "" }
+}
+
+function isGainedWhereComplete(g: GainedWhereState): boolean {
+  if (!g.gainedWhere) return false
+  if (g.gainedWhere === "other" && !g.gainedWhereDetail.trim()) return false
+  if (gainedWhereNeedsDates(g.gainedWhere) && (!g.gainedDateFrom || !g.gainedDateTo)) return false
+  return true
+}
+
+function GainedWhereFields({ value, onChange }: { value: GainedWhereState; onChange: (v: GainedWhereState) => void }) {
+  const needsDates = gainedWhereNeedsDates(value.gainedWhere)
+  return (
+    <div className="space-y-2">
+      <div className="space-y-1.5">
+        <Label className="text-xs">Gained where</Label>
+        <Select
+          value={value.gainedWhere ?? ""}
+          onValueChange={(v) => onChange({ ...value, gainedWhere: v, gainedWhereDetail: "", gainedDateFrom: "", gainedDateTo: "" })}
+        >
+          <SelectTrigger className="h-9"><SelectValue placeholder="Select…" /></SelectTrigger>
+          <SelectContent>
+            {GAINED_WHERE_OPTIONS.map((o) => (
+              <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {value.gainedWhere === "other" && (
+        <div className="space-y-1.5">
+          <Label className="text-xs">What was it?</Label>
+          <Input
+            className="h-9"
+            placeholder="e.g. Regional shooting competition"
+            value={value.gainedWhereDetail}
+            onChange={(e) => onChange({ ...value, gainedWhereDetail: e.target.value })}
+          />
+        </div>
+      )}
+
+      {needsDates && (
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1.5">
+            <Label className="text-xs">From</Label>
+            <Input
+              type="date"
+              className="h-9"
+              value={value.gainedDateFrom}
+              max={value.gainedDateTo || undefined}
+              onChange={(e) => onChange({ ...value, gainedDateFrom: e.target.value })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">To</Label>
+            <Input
+              type="date"
+              className="h-9"
+              value={value.gainedDateTo}
+              min={value.gainedDateFrom || undefined}
+              onChange={(e) => onChange({ ...value, gainedDateTo: e.target.value })}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function gainedWhereSummary(g: { gainedWhere?: string | null; gainedWhereDetail?: string | null; gainedDateFrom?: string | null; gainedDateTo?: string | null }): string | null {
+  const label = g.gainedWhere === "other" ? g.gainedWhereDetail : gainedWhereLabel(g.gainedWhere)
+  if (!label) return null
+  if (g.gainedDateFrom && g.gainedDateTo) {
+    return `${label} (${g.gainedDateFrom.slice(0, 10)} – ${g.gainedDateTo.slice(0, 10)})`
+  }
+  return label
+}
+
 // ─── Add badge inline ─────────────────────────────────────────────────────────
 
-function AddBadgeRow({ onAdd, onCancel }: { onAdd: (badgeName: string, replacement: boolean) => void; onCancel: () => void }) {
+function AddBadgeRow({ onAdd, onCancel }: {
+  onAdd: (badgeName: string, replacement: boolean, gainedWhere: GainedWhereState) => void
+  onCancel: () => void
+}) {
   const [category, setCategory] = useState<BadgeCategory | null>(null)
   const [subType, setSubType] = useState<string | null>(null)
   const [level, setLevel] = useState<string | null>(null)
   const [replacement, setReplacement] = useState(false)
+  const [gainedWhere, setGainedWhere] = useState<GainedWhereState>(emptyGainedWhere())
 
   const badgeName = category ? buildBadgeName(category, subType, level) : null
 
@@ -454,10 +557,13 @@ function AddBadgeRow({ onAdd, onCancel }: { onAdd: (badgeName: string, replaceme
           Replacement for a lost/damaged badge (£2 fee)
         </label>
       )}
+      {badgeName && (
+        <GainedWhereFields value={gainedWhere} onChange={setGainedWhere} />
+      )}
       <div className="flex gap-2">
         <Button size="sm" className="h-7 px-3 text-xs"
-          disabled={!badgeName}
-          onClick={() => { if (badgeName) onAdd(badgeName, replacement) }}>
+          disabled={!badgeName || !isGainedWhereComplete(gainedWhere)}
+          onClick={() => { if (badgeName) onAdd(badgeName, replacement, gainedWhere) }}>
           <Plus className="mr-1 h-3.5 w-3.5" />
           Add Badge
         </Button>
@@ -601,7 +707,27 @@ export default function MyOrdersPage() {
 
   // ─── Badge order actions ────────────────────────────────────────────────────
 
-  async function patchBadgeOrder(orderId: string, items: { badgeName: string; replacement: boolean }[]) {
+  type BadgeItemDraft = {
+    badgeName: string
+    replacement: boolean
+    gainedWhere?: string | null
+    gainedWhereDetail?: string | null
+    gainedDateFrom?: string | null
+    gainedDateTo?: string | null
+  }
+
+  function toBadgeItemDraft(i: BadgeItem): BadgeItemDraft {
+    return {
+      badgeName: i.badgeName,
+      replacement: !!i.replacement,
+      gainedWhere: i.gainedWhere,
+      gainedWhereDetail: i.gainedWhereDetail,
+      gainedDateFrom: i.gainedDateFrom,
+      gainedDateTo: i.gainedDateTo,
+    }
+  }
+
+  async function patchBadgeOrder(orderId: string, items: BadgeItemDraft[]) {
     setSavingBadgeId(orderId)
     try {
       const res = await fetch(`/api/cadet/badge-orders/${orderId}`, {
@@ -636,18 +762,23 @@ export default function MyOrdersPage() {
     }
   }
 
-  function handleAddBadge(order: BadgeOrder, badgeName: string, replacement: boolean) {
-    const nonGiven = order.items
-      .filter((i) => !i.givenAt)
-      .map((i) => ({ badgeName: i.badgeName, replacement: !!i.replacement }))
-    patchBadgeOrder(order.id, [...nonGiven, { badgeName, replacement }])
+  function handleAddBadge(order: BadgeOrder, badgeName: string, replacement: boolean, gainedWhere: GainedWhereState) {
+    const nonGiven = order.items.filter((i) => !i.givenAt).map(toBadgeItemDraft)
+    patchBadgeOrder(order.id, [...nonGiven, {
+      badgeName,
+      replacement,
+      gainedWhere: gainedWhere.gainedWhere,
+      gainedWhereDetail: gainedWhere.gainedWhereDetail,
+      gainedDateFrom: gainedWhere.gainedDateFrom,
+      gainedDateTo: gainedWhere.gainedDateTo,
+    }])
     setAddingToBadgeId(null)
   }
 
   function handleRemoveBadge(order: BadgeOrder, itemId: string) {
     const remaining = order.items
       .filter((i) => !i.givenAt && i.id !== itemId)
-      .map((i) => ({ badgeName: i.badgeName, replacement: !!i.replacement }))
+      .map(toBadgeItemDraft)
     patchBadgeOrder(order.id, remaining)
   }
 
@@ -885,14 +1016,19 @@ export default function MyOrdersPage() {
                       {order.items.map((item) => (
                         <li key={item.id} className="rounded-md border bg-muted/30 p-3 space-y-2">
                           <div className="flex items-start justify-between gap-2">
-                            <p className="text-sm font-medium">
-                              {item.badgeName}
-                              {item.replacement && (
-                                <span className="ml-2 rounded-md border border-amber-500/50 bg-amber-50 px-1.5 py-0.5 text-xs font-normal text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-                                  Replacement — £2 fee
-                                </span>
+                            <span className="min-w-0 flex-1">
+                              <p className="text-sm font-medium">
+                                {item.badgeName}
+                                {item.replacement && (
+                                  <span className="ml-2 rounded-md border border-amber-500/50 bg-amber-50 px-1.5 py-0.5 text-xs font-normal text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                                    Replacement — £2 fee
+                                  </span>
+                                )}
+                              </p>
+                              {gainedWhereSummary(item) && (
+                                <p className="text-xs text-muted-foreground">{gainedWhereSummary(item)}</p>
                               )}
-                            </p>
+                            </span>
                             {!item.givenAt && (
                               <Button size="icon" variant="ghost"
                                 className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
@@ -919,7 +1055,7 @@ export default function MyOrdersPage() {
 
                     {addingToBadgeId === order.id ? (
                       <AddBadgeRow
-                        onAdd={(badgeName, replacement) => handleAddBadge(order, badgeName, replacement)}
+                        onAdd={(badgeName, replacement, gainedWhere) => handleAddBadge(order, badgeName, replacement, gainedWhere)}
                         onCancel={() => setAddingToBadgeId(null)}
                       />
                     ) : (
@@ -1065,6 +1201,9 @@ export default function MyOrdersPage() {
                               </span>
                             )}
                           </p>
+                          {gainedWhereSummary(item) && (
+                            <p className="text-xs text-muted-foreground">{gainedWhereSummary(item)}</p>
+                          )}
                           {item.givenAt && (
                             <div className="flex items-center gap-1.5 rounded-md bg-success/10 border border-success/30 px-2.5 py-1.5">
                               <PackageCheck className="h-3 w-3 shrink-0 text-success" />
