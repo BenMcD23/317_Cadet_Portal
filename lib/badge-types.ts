@@ -105,6 +105,16 @@ export function gainedWhereNeedsDates(value: string | null | undefined): boolean
   return GAINED_WHERE_OPTIONS.find((o) => o.value === value)?.needsDates ?? false;
 }
 
+/** Replacements and automatically-awarded Core/Classification badges don't need a "gained where". */
+export function needsGainedWhere(
+  categoryId: string | null | undefined,
+  replacement: boolean
+): boolean {
+  if (replacement) return false;
+  if (categoryId === "core" || categoryId === "classification") return false;
+  return true;
+}
+
 /** Build the final badge name string from selections */
 export function buildBadgeName(
   category: BadgeCategory,
