@@ -91,7 +91,7 @@ export const GAINED_WHERE_OPTIONS = [
   { value: "camp",                     label: "On Camp" },
   { value: "sector_training_weekend",  label: "Sector Training Weekend" },
   { value: "wing_training_weekend",    label: "Wing Training Weekend" },
-  { value: "on_sqn",                   label: "On Sqn" },
+  { value: "on_sqn",                   label: "Squadron" },
   { value: "other",                    label: "Other" },
 ] as const;
 
