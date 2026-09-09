@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Link from "next/link"
+import Link, { useLinkStatus } from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
@@ -44,6 +44,7 @@ import {
   FileText,
   ChevronsUpDown,
   UserRound,
+  Loader2,
 } from "lucide-react"
 
 const NAV_ITEMS = [
@@ -57,6 +58,14 @@ const NAV_ITEMS = [
 
 function currentPageTitle(pathname: string): string | null {
   return NAV_ITEMS.find((i) => i.href === pathname)?.label ?? null
+}
+
+// Swaps a nav item's icon for a spinner while its Link is pending — the
+// tap-and-nothing-happens feeling on a slow mobile connection is really "no
+// feedback", not "no navigation", so this alone fixes the perceived hang.
+function NavIcon({ icon: Icon }: { icon: React.ElementType }) {
+  const { pending } = useLinkStatus()
+  return pending ? <Loader2 className="animate-spin" /> : <Icon />
 }
 
 function ThemeToggle() {
@@ -168,7 +177,7 @@ function AppSidebar() {
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton asChild tooltip={item.label} isActive={pathname === item.href}>
                     <Link href={item.href} onClick={closeOnMobile}>
-                      <item.icon />
+                      <NavIcon icon={item.icon} />
                       <span>{item.label}</span>
                     </Link>
                   </SidebarMenuButton>
