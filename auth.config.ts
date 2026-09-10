@@ -1,7 +1,7 @@
 import type { NextAuthConfig } from "next-auth"
 import Google from "next-auth/providers/google"
 
-const ALLOWED_DOMAIN = "317atc.co.uk"
+import { ALLOWED_DOMAIN } from "@/lib/config"
 
 export const authConfig: NextAuthConfig = {
   providers: [

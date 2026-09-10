@@ -1,7 +1,6 @@
 import NextAuth from "next-auth"
 import { authConfig } from "./auth.config"
-
-const ALLOWED_DOMAIN = "317atc.co.uk"
+import { ALLOWED_DOMAIN } from "@/lib/config"
 
 async function refreshGoogleToken(refreshToken: string) {
   const res = await fetch("https://oauth2.googleapis.com/token", {
@@ -36,7 +35,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, account }) {
       // Initial sign-in — store all tokens
       if (account) {
-        console.log("[auth] account.id_token present:", !!account.id_token)
         return {
           ...token,
           id_token: account.id_token,

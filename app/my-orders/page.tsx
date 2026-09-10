@@ -12,20 +12,18 @@ import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTi
 import { PageHeader } from "@/components/page-header"
 import { ErrorAlert } from "@/components/error-alert"
 import { SizeCombobox } from "@/components/size-combobox"
-import { ITEM_TYPES, NO_SIZE_ITEMS, WAIST_LEG_ITEMS, CHEST_ITEMS, COLLAR_ITEMS, SEAT_ITEMS, HIPS_ITEMS } from "@/lib/uniform-items"
 import { cn } from "@/lib/utils"
 import { ChevronDown, ChevronUp, Plus, Trash2, PackageCheck, Pencil, X, Shirt, Award, ClipboardList } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
-  BADGE_CATEGORIES,
-  BadgeCategory,
+  type BadgeCategory,
+  type GainedWhereOption,
   buildBadgeName,
-  GAINED_WHERE_OPTIONS,
-  gainedWhereNeedsDates,
   gainedWhereLabel,
   needsGainedWhere,
-} from "@/lib/badge-types"
+  useReference,
+} from "@/lib/reference"
 import {
   Dialog,
   DialogContent,
@@ -197,12 +195,14 @@ function SizingEditor({
   const [hips, setHips] = useState(parsed?.hips ?? "")
   const [notes, setNotes] = useState(parsed?.notes ?? "")
 
-  const noSize = NO_SIZE_ITEMS.has(itemType)
-  const showChest = CHEST_ITEMS.has(itemType)
-  const showCollar = COLLAR_ITEMS.has(itemType)
-  const showWaistLeg = WAIST_LEG_ITEMS.has(itemType)
-  const showSeat = SEAT_ITEMS.has(itemType)
-  const showHips = HIPS_ITEMS.has(itemType)
+  const { noSizeItems, sizingFields } = useReference()
+  const fields = sizingFields[itemType] ?? []
+  const noSize = noSizeItems.has(itemType)
+  const showChest = fields.includes("chest")
+  const showCollar = fields.includes("collar")
+  const showWaistLeg = fields.includes("waist")
+  const showSeat = fields.includes("seat")
+  const showHips = fields.includes("hips")
 
   function handleSave() {
     if (noSize) {
@@ -350,7 +350,8 @@ function AddItemRow({ existingTypes, onAdd, onCancel }: {
   onCancel: () => void
 }) {
   const [itemType, setItemType] = useState("")
-  const availableTypes = ITEM_TYPES.filter((t) => !existingTypes.has(t))
+  const { itemTypes } = useReference()
+  const availableTypes = itemTypes.filter((t) => !existingTypes.has(t))
 
   return (
     <div className="rounded-md border border-dashed p-3 space-y-2">
@@ -388,17 +389,18 @@ function BadgePicker({
   onSubType: (s: string | null) => void
   onLevel: (l: string | null) => void
 }) {
+  const { badgeCategories } = useReference()
   return (
     <div className="space-y-2">
       <div className="space-y-1.5">
         <Label className="text-xs">Badge type</Label>
         <Select
           value={category?.id ?? ""}
-          onValueChange={(v) => onCategory(BADGE_CATEGORIES.find((c) => c.id === v) ?? null)}
+          onValueChange={(v) => onCategory(badgeCategories.find((c) => c.id === v) ?? null)}
         >
           <SelectTrigger className="h-9"><SelectValue placeholder="Select type…" /></SelectTrigger>
           <SelectContent>
-            {BADGE_CATEGORIES.map((c) => (
+            {badgeCategories.map((c) => (
               <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
             ))}
           </SelectContent>
@@ -452,12 +454,14 @@ function emptyGainedWhere(): GainedWhereState {
 function isGainedWhereComplete(g: GainedWhereState): boolean {
   if (!g.gainedWhere) return false
   if (g.gainedWhere === "other" && !g.gainedWhereDetail.trim()) return false
-  if (gainedWhereNeedsDates(g.gainedWhere) && (!g.gainedDateFrom || !g.gainedDateTo)) return false
+  if (!g.gainedDateFrom || !g.gainedDateTo) return false
   return true
 }
 
 function GainedWhereFields({ value, onChange }: { value: GainedWhereState; onChange: (v: GainedWhereState) => void }) {
-  const needsDates = gainedWhereNeedsDates(value.gainedWhere)
+  const { gainedWhereOptions } = useReference()
+  // Every option records the dates attended.
+  const needsDates = !!value.gainedWhere
   return (
     <div className="space-y-2">
       <div className="space-y-1.5">
@@ -468,7 +472,7 @@ function GainedWhereFields({ value, onChange }: { value: GainedWhereState; onCha
         >
           <SelectTrigger className="h-9"><SelectValue placeholder="Select…" /></SelectTrigger>
           <SelectContent>
-            {GAINED_WHERE_OPTIONS.map((o) => (
+            {gainedWhereOptions.map((o) => (
               <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
             ))}
           </SelectContent>
@@ -515,8 +519,8 @@ function GainedWhereFields({ value, onChange }: { value: GainedWhereState; onCha
   )
 }
 
-function gainedWhereSummary(g: { gainedWhere?: string | null; gainedWhereDetail?: string | null; gainedDateFrom?: string | null; gainedDateTo?: string | null }): string | null {
-  const label = g.gainedWhere === "other" ? g.gainedWhereDetail : gainedWhereLabel(g.gainedWhere)
+function gainedWhereSummary(options: GainedWhereOption[], g: { gainedWhere?: string | null; gainedWhereDetail?: string | null; gainedDateFrom?: string | null; gainedDateTo?: string | null }): string | null {
+  const label = g.gainedWhere === "other" ? g.gainedWhereDetail : gainedWhereLabel(options, g.gainedWhere)
   if (!label) return null
   if (g.gainedDateFrom && g.gainedDateTo) {
     return `${label} (${g.gainedDateFrom.slice(0, 10)} – ${g.gainedDateTo.slice(0, 10)})`
@@ -536,8 +540,9 @@ function AddBadgeRow({ onAdd, onCancel }: {
   const [replacement, setReplacement] = useState(false)
   const [gainedWhere, setGainedWhere] = useState<GainedWhereState>(emptyGainedWhere())
 
+  const { categoriesWithoutGainedWhere } = useReference()
   const badgeName = category ? buildBadgeName(category, subType, level) : null
-  const gainedWhereApplies = needsGainedWhere(category?.id, replacement)
+  const gainedWhereApplies = needsGainedWhere(categoriesWithoutGainedWhere, category?.id, replacement)
 
   function handleAdd() {
     if (!badgeName) return
@@ -588,6 +593,7 @@ type Entry =
   | { key: string; ts: number; kind: "badge"; order: BadgeOrder }
 
 export default function MyOrdersPage() {
+  const { itemTypes, gainedWhereOptions } = useReference()
   const [uniformOrders, setUniformOrders] = useState<Order[]>([])
   const [badgeOrders, setBadgeOrders] = useState<BadgeOrder[]>([])
   const [loading, setLoading] = useState(true)
@@ -611,8 +617,6 @@ export default function MyOrdersPage() {
     | { kind: "badge"; order: BadgeOrder; itemId: string; label: string }
   const [pendingRemove, setPendingRemove] = useState<PendingRemove | null>(null)
 
-  useEffect(() => { fetchAll() }, [])
-
   async function fetchAll() {
     setLoading(true)
     setError(null)
@@ -634,10 +638,14 @@ export default function MyOrdersPage() {
     }
   }
 
+  // Load once on mount.
+  useEffect(() => { fetchAll() }, [])
+
   function toggleExpand(key: string) {
     setExpandedIds((prev) => {
       const next = new Set(prev)
-      next.has(key) ? next.delete(key) : next.add(key)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
       return next
     })
   }
@@ -951,7 +959,7 @@ export default function MyOrdersPage() {
                         />
                       ) : (
                         <Button size="sm" variant="outline" className="w-full h-8 text-xs"
-                          disabled={isSaving || existingTypes.size >= ITEM_TYPES.length}
+                          disabled={isSaving || existingTypes.size >= itemTypes.length}
                           onClick={() => { setAddingToId(order.id); setEditingItemId(null) }}>
                           <Plus className="mr-1.5 h-3.5 w-3.5" />
                           Add Item
@@ -1033,8 +1041,8 @@ export default function MyOrdersPage() {
                                   </span>
                                 )}
                               </p>
-                              {gainedWhereSummary(item) && (
-                                <p className="text-xs text-muted-foreground">{gainedWhereSummary(item)}</p>
+                              {gainedWhereSummary(gainedWhereOptions, item) && (
+                                <p className="text-xs text-muted-foreground">{gainedWhereSummary(gainedWhereOptions, item)}</p>
                               )}
                             </span>
                             {!item.givenAt && (
@@ -1209,8 +1217,8 @@ export default function MyOrdersPage() {
                               </span>
                             )}
                           </p>
-                          {gainedWhereSummary(item) && (
-                            <p className="text-xs text-muted-foreground">{gainedWhereSummary(item)}</p>
+                          {gainedWhereSummary(gainedWhereOptions, item) && (
+                            <p className="text-xs text-muted-foreground">{gainedWhereSummary(gainedWhereOptions, item)}</p>
                           )}
                           {item.givenAt && (
                             <div className="flex items-center gap-1.5 rounded-md bg-success/10 border border-success/30 px-2.5 py-1.5">

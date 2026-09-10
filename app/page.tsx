@@ -6,19 +6,9 @@ import { useSession } from "next-auth/react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { PageHeader } from "@/components/page-header"
+import { useReference } from "@/lib/reference"
+import { formatDate } from "@/lib/format"
 import { Shirt, Award, ClipboardList, ArrowRight, MessageSquare } from "lucide-react"
-
-const ISSUANCE_CATEGORIES = [
-  "Beret",
-  "Wedgewood Shirt",
-  "Working Blue Shirt",
-  "Jumper",
-  "Slacks/Trousers",
-  "Skirt",
-  "Tie",
-  "Brassard",
-  "Belt",
-]
 
 const QUICK_LINKS = [
   { href: "/uniform-order", icon: Shirt, title: "Uniform Order", desc: "Request new uniform items or replacements." },
@@ -33,12 +23,9 @@ type Issuance = {
   sizeGiven: string | null
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
-}
-
 export default function HomePage() {
   const { data: session } = useSession()
+  const { issuanceCategories } = useReference()
   const [issuances, setIssuances] = useState<Issuance[] | null>(null)
   const [loading, setLoading] = useState(true)
   // Only ever true for a cadet with no number saved — staff and adults have no
@@ -139,7 +126,7 @@ export default function HomePage() {
           </CardHeader>
           <CardContent className="p-0">
             <div className="divide-y">
-              {ISSUANCE_CATEGORIES.map((category) => {
+              {issuanceCategories.map((category) => {
                 const record = issuances.find((i) => i.itemCategory === category)
                 return (
                   <div key={category} className="flex items-center justify-between gap-4 px-6 py-3">

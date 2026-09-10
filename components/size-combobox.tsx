@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
-import { ITEM_SIZES } from "@/lib/uniform-items"
+import { useState, useRef } from "react"
+import { useReference } from "@/lib/reference"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
@@ -27,9 +27,16 @@ export function SizeCombobox({
   onKeyDown,
 }: SizeComboboxProps) {
   const [open, setOpen] = useState(false)
+  // Close the list when the item type changes ("adjust state during render").
+  const [prevItemType, setPrevItemType] = useState(itemType)
+  if (itemType !== prevItemType) {
+    setPrevItemType(itemType)
+    setOpen(false)
+  }
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const suggestions = ITEM_SIZES[itemType] ?? []
+  const { sizes } = useReference()
+  const suggestions = sizes[itemType] ?? []
   const filtered = value.trim()
     ? suggestions.filter((s) => s.toLowerCase().includes(value.trim().toLowerCase()))
     : suggestions
@@ -43,8 +50,6 @@ export function SizeCombobox({
     if (containerRef.current?.contains(e.relatedTarget as Node)) return
     setOpen(false)
   }
-
-  useEffect(() => { setOpen(false) }, [itemType])
 
   return (
     <div ref={containerRef} className={cn("relative", className)} onBlur={handleBlur}>

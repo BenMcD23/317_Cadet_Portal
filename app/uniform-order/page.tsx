@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { SizeCombobox } from "@/components/size-combobox"
-import { ITEM_TYPES, NO_SIZE_ITEMS, WAIST_LEG_ITEMS, CHEST_ITEMS, COLLAR_ITEMS, SEAT_ITEMS, HIPS_ITEMS } from "@/lib/uniform-items"
+import { useReference } from "@/lib/reference"
 import { PageHeader } from "@/components/page-header"
 import { ErrorAlert } from "@/components/error-alert"
 import { Spinner } from "@/components/ui/spinner"
@@ -80,11 +80,13 @@ function AdjustmentFields({
   sizing: SizingDetails
   onChange: (patch: Partial<SizingDetails>) => void
 }) {
-  const showWaistLeg = WAIST_LEG_ITEMS.has(itemType)
-  const showChest = CHEST_ITEMS.has(itemType)
-  const showCollar = COLLAR_ITEMS.has(itemType)
-  const showSeat = SEAT_ITEMS.has(itemType)
-  const showHips = HIPS_ITEMS.has(itemType)
+  const { sizingFields } = useReference()
+  const fields = sizingFields[itemType] ?? []
+  const showWaistLeg = fields.includes("waist")
+  const showChest = fields.includes("chest")
+  const showCollar = fields.includes("collar")
+  const showSeat = fields.includes("seat")
+  const showHips = fields.includes("hips")
 
   return (
     <div className="space-y-3 rounded-md border bg-muted/30 p-3">
@@ -209,7 +211,8 @@ function ItemSizingCard({
   entry: ItemEntry
   onChange: (patch: Partial<ItemEntry>) => void
 }) {
-  const noSize = NO_SIZE_ITEMS.has(entry.itemType)
+  const { noSizeItems } = useReference()
+  const noSize = noSizeItems.has(entry.itemType)
 
   function patchSizing(patch: Partial<SizingDetails>) {
     onChange({ sizing: { ...entry.sizing, ...patch } })
@@ -312,8 +315,8 @@ function ItemSizingCard({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-function entryToApiItem(entry: ItemEntry) {
-  if (NO_SIZE_ITEMS.has(entry.itemType)) {
+function entryToApiItem(entry: ItemEntry, noSizeItems: Set<string>) {
+  if (noSizeItems.has(entry.itemType)) {
     return { itemType: entry.itemType, size: "", needSizing: false, sizingDetails: "" }
   }
   if (entry.mode === "known") {
@@ -329,6 +332,7 @@ function entryToApiItem(entry: ItemEntry) {
 
 export default function UniformOrderPage() {
   const router = useRouter()
+  const { itemTypes, noSizeItems } = useReference()
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
   const [entries, setEntries] = useState<Record<string, ItemEntry>>({})
   const [selectorOpen, setSelectorOpen] = useState(true)
@@ -367,7 +371,7 @@ export default function UniformOrderPage() {
     for (const itemType of selectedItems) {
       const entry = entries[itemType]
       if (!entry) return false
-      if (NO_SIZE_ITEMS.has(itemType)) continue
+      if (noSizeItems.has(itemType)) continue
       if (entry.mode === "known" && !entry.size.trim()) return false
     }
     return true
@@ -379,7 +383,7 @@ export default function UniformOrderPage() {
     setError(null)
     setSubmitting(true)
     try {
-      const items = ITEM_TYPES.filter((t) => selectedItems.has(t)).map((t) => entryToApiItem(entries[t]))
+      const items = itemTypes.filter((t) => selectedItems.has(t)).map((t) => entryToApiItem(entries[t], noSizeItems))
       const endpoint = isCadet === false ? "/api/user/orders" : "/api/cadet/orders"
       const res = await fetch(endpoint, {
         method: "POST",
@@ -403,7 +407,7 @@ export default function UniformOrderPage() {
     }
   }
 
-  const orderedSelected = ITEM_TYPES.filter((t) => selectedItems.has(t))
+  const orderedSelected = itemTypes.filter((t) => selectedItems.has(t))
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-6 pb-16">
@@ -428,7 +432,7 @@ export default function UniformOrderPage() {
           {selectorOpen && (
             <CardContent>
               <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
-                {ITEM_TYPES.map((itemType) => (
+                {itemTypes.map((itemType) => (
                   <div key={itemType} className="flex items-center gap-2">
                     <Checkbox
                       id={`item-${itemType}`}

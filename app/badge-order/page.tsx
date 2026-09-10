@@ -20,14 +20,13 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
-  BADGE_CATEGORIES,
-  BadgeCategory,
+  type BadgeCategory,
+  type GainedWhereOption,
   buildBadgeName,
-  GAINED_WHERE_OPTIONS,
-  gainedWhereNeedsDates,
   gainedWhereLabel,
   needsGainedWhere,
-} from "@/lib/badge-types"
+  useReference,
+} from "@/lib/reference"
 
 // ─── Badge picker ─────────────────────────────────────────────────────────────
 
@@ -46,19 +45,20 @@ function BadgePicker({
   onSubType: (s: string | null) => void
   onLevel: (l: string | null) => void
 }) {
+  const { badgeCategories } = useReference()
   return (
     <div className="space-y-2">
       <div className="space-y-1.5">
         <Label className="text-xs">Badge type</Label>
         <Select
           value={category?.id ?? ""}
-          onValueChange={(v) => onCategory(BADGE_CATEGORIES.find((c) => c.id === v) ?? null)}
+          onValueChange={(v) => onCategory(badgeCategories.find((c) => c.id === v) ?? null)}
         >
           <SelectTrigger className="h-9">
             <SelectValue placeholder="Select type…" />
           </SelectTrigger>
           <SelectContent>
-            {BADGE_CATEGORIES.map((c) => (
+            {badgeCategories.map((c) => (
               <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
             ))}
           </SelectContent>
@@ -116,7 +116,7 @@ function emptyGainedWhere(): GainedWhereState {
 function isGainedWhereComplete(g: GainedWhereState): boolean {
   if (!g.gainedWhere) return false
   if (g.gainedWhere === "other" && !g.gainedWhereDetail.trim()) return false
-  if (gainedWhereNeedsDates(g.gainedWhere) && (!g.gainedDateFrom || !g.gainedDateTo)) return false
+  if (!g.gainedDateFrom || !g.gainedDateTo) return false
   return true
 }
 
@@ -127,7 +127,9 @@ function GainedWhereFields({
   value: GainedWhereState
   onChange: (v: GainedWhereState) => void
 }) {
-  const needsDates = gainedWhereNeedsDates(value.gainedWhere)
+  const { gainedWhereOptions } = useReference()
+  // Every option records the dates attended.
+  const needsDates = !!value.gainedWhere
   return (
     <div className="space-y-2">
       <div className="space-y-1.5">
@@ -140,7 +142,7 @@ function GainedWhereFields({
             <SelectValue placeholder="Select…" />
           </SelectTrigger>
           <SelectContent>
-            {GAINED_WHERE_OPTIONS.map((o) => (
+            {gainedWhereOptions.map((o) => (
               <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
             ))}
           </SelectContent>
@@ -187,8 +189,8 @@ function GainedWhereFields({
   )
 }
 
-function gainedWhereSummary(g: { gainedWhere: string | null; gainedWhereDetail: string; gainedDateFrom: string; gainedDateTo: string }): string {
-  const label = g.gainedWhere === "other" ? g.gainedWhereDetail : gainedWhereLabel(g.gainedWhere)
+function gainedWhereSummary(options: GainedWhereOption[], g: { gainedWhere: string | null; gainedWhereDetail: string; gainedDateFrom: string; gainedDateTo: string }): string {
+  const label = g.gainedWhere === "other" ? g.gainedWhereDetail : gainedWhereLabel(options, g.gainedWhere)
   if (!label) return ""
   if (g.gainedDateFrom && g.gainedDateTo) {
     return `${label} (${g.gainedDateFrom} – ${g.gainedDateTo})`
@@ -217,6 +219,7 @@ type SelectedBadge = {
 
 export default function BadgeOrderPage() {
   const router = useRouter()
+  const { gainedWhereOptions, categoriesWithoutGainedWhere } = useReference()
 
   const [selectorOpen, setSelectorOpen] = useState(true)
   const [badges, setBadges] = useState<SelectedBadge[]>([])
@@ -231,7 +234,7 @@ export default function BadgeOrderPage() {
   const [error, setError] = useState<string | null>(null)
 
   const currentBadgeName = category ? buildBadgeName(category, subType, level) : null
-  const gainedWhereApplies = needsGainedWhere(category?.id, replacement)
+  const gainedWhereApplies = needsGainedWhere(categoriesWithoutGainedWhere, category?.id, replacement)
   const replacementCount = badges.filter((b) => b.replacement).length
 
   function handleAddBadge() {
@@ -330,8 +333,8 @@ export default function BadgeOrderPage() {
                             </Badge>
                           )}
                         </span>
-                        {gainedWhereSummary(badge) && (
-                          <span className="block text-xs text-muted-foreground">{gainedWhereSummary(badge)}</span>
+                        {gainedWhereSummary(gainedWhereOptions, badge) && (
+                          <span className="block text-xs text-muted-foreground">{gainedWhereSummary(gainedWhereOptions, badge)}</span>
                         )}
                       </span>
                       <button
