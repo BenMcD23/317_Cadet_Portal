@@ -1,4 +1,4 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
   // `radix-ui` (the single consolidated package shadcn/ui imports from) has
@@ -7,6 +7,6 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["radix-ui"],
   },
-};
+}
 
-export default nextConfig;
+export default nextConfig

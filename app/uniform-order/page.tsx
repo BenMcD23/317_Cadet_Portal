@@ -89,7 +89,7 @@ function AdjustmentFields({
   const showHips = fields.includes("hips")
 
   return (
-    <div className="space-y-3 rounded-md border bg-muted/30 p-3">
+    <div className="bg-muted/30 space-y-3 rounded-md border p-3">
       <div className="space-y-1.5">
         <Label className="text-xs">Overall fit</Label>
         <div className="flex gap-2">
@@ -113,7 +113,9 @@ function AdjustmentFields({
 
       {showChest && (
         <div className="space-y-1.5">
-          <Label htmlFor={`chest-${itemType}`} className="text-xs">Chest</Label>
+          <Label htmlFor={`chest-${itemType}`} className="text-xs">
+            Chest
+          </Label>
           <Input
             id={`chest-${itemType}`}
             placeholder="e.g. slightly bigger"
@@ -126,7 +128,9 @@ function AdjustmentFields({
 
       {showCollar && (
         <div className="space-y-1.5">
-          <Label htmlFor={`collar-${itemType}`} className="text-xs">Collar</Label>
+          <Label htmlFor={`collar-${itemType}`} className="text-xs">
+            Collar
+          </Label>
           <Input
             id={`collar-${itemType}`}
             placeholder="e.g. one size bigger"
@@ -140,7 +144,9 @@ function AdjustmentFields({
       {showWaistLeg && (
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label htmlFor={`waist-${itemType}`} className="text-xs">Waist (W)</Label>
+            <Label htmlFor={`waist-${itemType}`} className="text-xs">
+              Waist (W)
+            </Label>
             <Input
               id={`waist-${itemType}`}
               placeholder="e.g. 2cm bigger"
@@ -150,7 +156,9 @@ function AdjustmentFields({
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor={`leg-${itemType}`} className="text-xs">Leg (L)</Label>
+            <Label htmlFor={`leg-${itemType}`} className="text-xs">
+              Leg (L)
+            </Label>
             <Input
               id={`leg-${itemType}`}
               placeholder="e.g. shorter"
@@ -164,7 +172,9 @@ function AdjustmentFields({
 
       {showSeat && (
         <div className="space-y-1.5">
-          <Label htmlFor={`seat-${itemType}`} className="text-xs">Seat (S)</Label>
+          <Label htmlFor={`seat-${itemType}`} className="text-xs">
+            Seat (S)
+          </Label>
           <Input
             id={`seat-${itemType}`}
             placeholder="e.g. bigger"
@@ -177,7 +187,9 @@ function AdjustmentFields({
 
       {showHips && (
         <div className="space-y-1.5">
-          <Label htmlFor={`hips-${itemType}`} className="text-xs">Hips (H)</Label>
+          <Label htmlFor={`hips-${itemType}`} className="text-xs">
+            Hips (H)
+          </Label>
           <Input
             id={`hips-${itemType}`}
             placeholder="e.g. bigger"
@@ -189,7 +201,9 @@ function AdjustmentFields({
       )}
 
       <div className="space-y-1.5">
-        <Label htmlFor={`notes-${itemType}`} className="text-xs">Any other notes</Label>
+        <Label htmlFor={`notes-${itemType}`} className="text-xs">
+          Any other notes
+        </Label>
         <Input
           id={`notes-${itemType}`}
           placeholder="e.g. longer in the body"
@@ -220,15 +234,15 @@ function ItemSizingCard({
 
   if (noSize) {
     return (
-      <div className="rounded-md border bg-muted/20 px-3 py-2">
+      <div className="bg-muted/20 rounded-md border px-3 py-2">
         <p className="text-sm font-medium">{entry.itemType}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">No sizing required</p>
+        <p className="text-muted-foreground mt-0.5 text-xs">No sizing required</p>
       </div>
     )
   }
 
   return (
-    <div className="rounded-md border p-3 space-y-3">
+    <div className="space-y-3 rounded-md border p-3">
       <p className="text-sm font-semibold">{entry.itemType}</p>
 
       {/* Mode toggle */}
@@ -261,11 +275,7 @@ function ItemSizingCard({
 
       {/* Known size */}
       {entry.mode === "known" && (
-        <SizeCombobox
-          itemType={entry.itemType}
-          value={entry.size}
-          onChange={(v) => onChange({ size: v })}
-        />
+        <SizeCombobox itemType={entry.itemType} value={entry.size} onChange={(v) => onChange({ size: v })} />
       )}
 
       {/* Needs sizing */}
@@ -282,7 +292,7 @@ function ItemSizingCard({
                   patchSizing({ currentSizeUnknown: !!c, currentSize: !!c ? "" : entry.sizing.currentSize })
                 }
               />
-              <Label htmlFor={`unknown-${entry.itemType}`} className="text-xs cursor-pointer">
+              <Label htmlFor={`unknown-${entry.itemType}`} className="cursor-pointer text-xs">
                 I don&apos;t know my current size
               </Label>
             </div>
@@ -300,11 +310,7 @@ function ItemSizingCard({
           {!entry.sizing.currentSizeUnknown && (
             <div className="space-y-1.5">
               <Label className="text-xs font-medium">Adjustments needed</Label>
-              <AdjustmentFields
-                itemType={entry.itemType}
-                sizing={entry.sizing}
-                onChange={patchSizing}
-              />
+              <AdjustmentFields itemType={entry.itemType} sizing={entry.sizing} onChange={patchSizing} />
             </div>
           )}
         </div>
@@ -383,7 +389,9 @@ export default function UniformOrderPage() {
     setError(null)
     setSubmitting(true)
     try {
-      const items = itemTypes.filter((t) => selectedItems.has(t)).map((t) => entryToApiItem(entries[t], noSizeItems))
+      const items = itemTypes
+        .filter((t) => selectedItems.has(t))
+        .map((t) => entryToApiItem(entries[t], noSizeItems))
       const endpoint = isCadet === false ? "/api/user/orders" : "/api/cadet/orders"
       const res = await fetch(endpoint, {
         method: "POST",
@@ -416,17 +424,21 @@ export default function UniformOrderPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Item selector */}
         <Card>
-          <CardHeader className="pb-2 cursor-pointer" onClick={() => setSelectorOpen((v) => !v)}>
+          <CardHeader className="cursor-pointer pb-2" onClick={() => setSelectorOpen((v) => !v)}>
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">
                 Items needed
                 {selectedItems.size > 0 && (
-                  <span className="ml-2 text-sm font-normal text-muted-foreground">
+                  <span className="text-muted-foreground ml-2 text-sm font-normal">
                     ({selectedItems.size} selected)
                   </span>
                 )}
               </CardTitle>
-              {selectorOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+              {selectorOpen ? (
+                <ChevronUp className="text-muted-foreground h-4 w-4" />
+              ) : (
+                <ChevronDown className="text-muted-foreground h-4 w-4" />
+              )}
             </div>
           </CardHeader>
           {selectorOpen && (
@@ -439,7 +451,7 @@ export default function UniformOrderPage() {
                       checked={selectedItems.has(itemType)}
                       onCheckedChange={() => toggleItem(itemType)}
                     />
-                    <Label htmlFor={`item-${itemType}`} className="text-sm cursor-pointer leading-tight">
+                    <Label htmlFor={`item-${itemType}`} className="cursor-pointer text-sm leading-tight">
                       {itemType}
                     </Label>
                   </div>
@@ -452,7 +464,7 @@ export default function UniformOrderPage() {
         {/* Per-item sizing */}
         {orderedSelected.length > 0 && (
           <div className="space-y-3">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            <h2 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
               Sizing details
             </h2>
             {orderedSelected.map((itemType) => (

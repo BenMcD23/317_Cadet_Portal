@@ -12,13 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Spinner } from "@/components/ui/spinner"
 import { PageHeader } from "@/components/page-header"
 import { ErrorAlert } from "@/components/error-alert"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   type BadgeCategory,
   type GainedWhereOption,
@@ -59,7 +53,9 @@ function BadgePicker({
           </SelectTrigger>
           <SelectContent>
             {badgeCategories.map((c) => (
-              <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -74,7 +70,9 @@ function BadgePicker({
             </SelectTrigger>
             <SelectContent>
               {(category.subTypes ?? category.items ?? []).map((s) => (
-                <SelectItem key={s} value={s}>{s}</SelectItem>
+                <SelectItem key={s} value={s}>
+                  {s}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -90,7 +88,9 @@ function BadgePicker({
             </SelectTrigger>
             <SelectContent>
               {category.levels.map((l) => (
-                <SelectItem key={l} value={l}>{l}</SelectItem>
+                <SelectItem key={l} value={l}>
+                  {l}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -136,14 +136,24 @@ function GainedWhereFields({
         <Label className="text-xs">Gained where</Label>
         <Select
           value={value.gainedWhere ?? ""}
-          onValueChange={(v) => onChange({ ...value, gainedWhere: v, gainedWhereDetail: "", gainedDateFrom: "", gainedDateTo: "" })}
+          onValueChange={(v) =>
+            onChange({
+              ...value,
+              gainedWhere: v,
+              gainedWhereDetail: "",
+              gainedDateFrom: "",
+              gainedDateTo: "",
+            })
+          }
         >
           <SelectTrigger className="h-9">
             <SelectValue placeholder="Select…" />
           </SelectTrigger>
           <SelectContent>
             {gainedWhereOptions.map((o) => (
-              <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+              <SelectItem key={o.value} value={o.value}>
+                {o.label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -189,7 +199,10 @@ function GainedWhereFields({
   )
 }
 
-function gainedWhereSummary(options: GainedWhereOption[], g: { gainedWhere: string | null; gainedWhereDetail: string; gainedDateFrom: string; gainedDateTo: string }): string {
+function gainedWhereSummary(
+  options: GainedWhereOption[],
+  g: { gainedWhere: string | null; gainedWhereDetail: string; gainedDateFrom: string; gainedDateTo: string }
+): string {
   const label = g.gainedWhere === "other" ? g.gainedWhereDetail : gainedWhereLabel(options, g.gainedWhere)
   if (!label) return ""
   if (g.gainedDateFrom && g.gainedDateTo) {
@@ -199,11 +212,31 @@ function gainedWhereSummary(options: GainedWhereOption[], g: { gainedWhere: stri
 }
 
 const LEVEL_STYLES: Record<string, { border: string; bg: string; text: string }> = {
-  Blue:              { border: "border-blue-400/50",   bg: "bg-blue-50 dark:bg-blue-950/40",     text: "text-blue-900 dark:text-blue-100" },
-  Bronze:            { border: "border-amber-600/50",  bg: "bg-amber-50 dark:bg-amber-950/40",   text: "text-amber-900 dark:text-amber-100" },
-  Silver:            { border: "border-slate-400/50",  bg: "bg-slate-50 dark:bg-slate-800/40",   text: "text-slate-800 dark:text-slate-100" },
-  Gold:              { border: "border-yellow-500/50", bg: "bg-yellow-50 dark:bg-yellow-950/40", text: "text-yellow-900 dark:text-yellow-100" },
-  "Gold (Nijmegen)": { border: "border-yellow-500/50", bg: "bg-yellow-50 dark:bg-yellow-950/40", text: "text-yellow-900 dark:text-yellow-100" },
+  Blue: {
+    border: "border-blue-400/50",
+    bg: "bg-blue-50 dark:bg-blue-950/40",
+    text: "text-blue-900 dark:text-blue-100",
+  },
+  Bronze: {
+    border: "border-amber-600/50",
+    bg: "bg-amber-50 dark:bg-amber-950/40",
+    text: "text-amber-900 dark:text-amber-100",
+  },
+  Silver: {
+    border: "border-slate-400/50",
+    bg: "bg-slate-50 dark:bg-slate-800/40",
+    text: "text-slate-800 dark:text-slate-100",
+  },
+  Gold: {
+    border: "border-yellow-500/50",
+    bg: "bg-yellow-50 dark:bg-yellow-950/40",
+    text: "text-yellow-900 dark:text-yellow-100",
+  },
+  "Gold (Nijmegen)": {
+    border: "border-yellow-500/50",
+    bg: "bg-yellow-50 dark:bg-yellow-950/40",
+    text: "text-yellow-900 dark:text-yellow-100",
+  },
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -240,14 +273,17 @@ export default function BadgeOrderPage() {
   function handleAddBadge() {
     if (!currentBadgeName) return
     if (gainedWhereApplies && !isGainedWhereComplete(gainedWhere)) return
-    setBadges((prev) => [...prev, {
-      badgeName: currentBadgeName,
-      replacement,
-      gainedWhere: gainedWhereApplies ? gainedWhere.gainedWhere : null,
-      gainedWhereDetail: gainedWhereApplies ? gainedWhere.gainedWhereDetail : "",
-      gainedDateFrom: gainedWhereApplies ? gainedWhere.gainedDateFrom : "",
-      gainedDateTo: gainedWhereApplies ? gainedWhere.gainedDateTo : "",
-    }])
+    setBadges((prev) => [
+      ...prev,
+      {
+        badgeName: currentBadgeName,
+        replacement,
+        gainedWhere: gainedWhereApplies ? gainedWhere.gainedWhere : null,
+        gainedWhereDetail: gainedWhereApplies ? gainedWhere.gainedWhereDetail : "",
+        gainedDateFrom: gainedWhereApplies ? gainedWhere.gainedDateFrom : "",
+        gainedDateTo: gainedWhereApplies ? gainedWhere.gainedDateTo : "",
+      },
+    ])
     setCategory(null)
     setSubType(null)
     setLevel(null)
@@ -294,23 +330,21 @@ export default function BadgeOrderPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Badge selector card */}
         <Card>
-          <CardHeader
-            className="pb-2 cursor-pointer"
-            onClick={() => setSelectorOpen((v) => !v)}
-          >
+          <CardHeader className="cursor-pointer pb-2" onClick={() => setSelectorOpen((v) => !v)}>
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">
                 Badges needed
                 {badges.length > 0 && (
-                  <span className="ml-2 text-sm font-normal text-muted-foreground">
+                  <span className="text-muted-foreground ml-2 text-sm font-normal">
                     ({badges.length} selected)
                   </span>
                 )}
               </CardTitle>
-              {selectorOpen
-                ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                : <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              }
+              {selectorOpen ? (
+                <ChevronUp className="text-muted-foreground h-4 w-4" />
+              ) : (
+                <ChevronDown className="text-muted-foreground h-4 w-4" />
+              )}
             </div>
           </CardHeader>
 
@@ -322,19 +356,24 @@ export default function BadgeOrderPage() {
                   {badges.map((badge, idx) => (
                     <li
                       key={idx}
-                      className="flex items-center justify-between gap-2 rounded-md border bg-muted/30 px-3 py-2 text-sm"
+                      className="bg-muted/30 flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm"
                     >
                       <span className="min-w-0 flex-1">
                         <span className="flex flex-wrap items-center gap-2">
                           {badge.badgeName}
                           {badge.replacement && (
-                            <Badge variant="outline" className="border-amber-500/50 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                            <Badge
+                              variant="outline"
+                              className="border-amber-500/50 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+                            >
                               Replacement — £2 fee
                             </Badge>
                           )}
                         </span>
                         {gainedWhereSummary(gainedWhereOptions, badge) && (
-                          <span className="block text-xs text-muted-foreground">{gainedWhereSummary(gainedWhereOptions, badge)}</span>
+                          <span className="text-muted-foreground block text-xs">
+                            {gainedWhereSummary(gainedWhereOptions, badge)}
+                          </span>
                         )}
                       </span>
                       <button
@@ -351,23 +390,35 @@ export default function BadgeOrderPage() {
               )}
 
               {/* Badge picker */}
-              <div className="rounded-md border border-dashed p-3 space-y-3">
+              <div className="space-y-3 rounded-md border border-dashed p-3">
                 <BadgePicker
                   category={category}
                   subType={subType}
                   level={level}
-                  onCategory={(c) => { setCategory(c); setSubType(null); setLevel(null) }}
-                  onSubType={(s) => { setSubType(s); setLevel(null) }}
+                  onCategory={(c) => {
+                    setCategory(c)
+                    setSubType(null)
+                    setLevel(null)
+                  }}
+                  onSubType={(s) => {
+                    setSubType(s)
+                    setLevel(null)
+                  }}
                   onLevel={setLevel}
                 />
-                {currentBadgeName && (() => {
-                  const s = level ? LEVEL_STYLES[level] : null
-                  return (
-                    <div className={`flex items-center gap-2 rounded-md border px-3 py-2 ${s ? `${s.border} ${s.bg}` : "border-primary/30 bg-primary/10"}`}>
-                      <span className={`text-sm font-medium ${s ? s.text : "text-foreground"}`}>{currentBadgeName}</span>
-                    </div>
-                  )
-                })()}
+                {currentBadgeName &&
+                  (() => {
+                    const s = level ? LEVEL_STYLES[level] : null
+                    return (
+                      <div
+                        className={`flex items-center gap-2 rounded-md border px-3 py-2 ${s ? `${s.border} ${s.bg}` : "border-primary/30 bg-primary/10"}`}
+                      >
+                        <span className={`text-sm font-medium ${s ? s.text : "text-foreground"}`}>
+                          {currentBadgeName}
+                        </span>
+                      </div>
+                    )
+                  })()}
                 {currentBadgeName && (
                   <label className="flex cursor-pointer items-start gap-2 text-sm">
                     <Checkbox
@@ -377,9 +428,7 @@ export default function BadgeOrderPage() {
                     />
                     <span>
                       This is a replacement for a lost or damaged badge
-                      <span className="block text-xs text-muted-foreground">
-                        Replacement badges cost £2
-                      </span>
+                      <span className="text-muted-foreground block text-xs">Replacement badges cost £2</span>
                     </span>
                   </label>
                 )}
@@ -405,8 +454,7 @@ export default function BadgeOrderPage() {
 
         {replacementCount > 0 && (
           <p className="rounded-md border border-amber-500/40 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
-            Replacement badges cost £2 each — please bring £{replacementCount * 2} to stores when
-            collecting.
+            Replacement badges cost £2 each — please bring £{replacementCount * 2} to stores when collecting.
           </p>
         )}
 

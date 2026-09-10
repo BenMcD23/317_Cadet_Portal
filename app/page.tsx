@@ -11,9 +11,24 @@ import { formatDate } from "@/lib/format"
 import { Shirt, Award, ClipboardList, ArrowRight, MessageSquare } from "lucide-react"
 
 const QUICK_LINKS = [
-  { href: "/uniform-order", icon: Shirt, title: "Uniform Order", desc: "Request new uniform items or replacements." },
-  { href: "/badge-order", icon: Award, title: "Badge Order", desc: "Order proficiency badges you have qualified for." },
-  { href: "/my-orders", icon: ClipboardList, title: "My Orders", desc: "View and manage your submitted orders." },
+  {
+    href: "/uniform-order",
+    icon: Shirt,
+    title: "Uniform Order",
+    desc: "Request new uniform items or replacements.",
+  },
+  {
+    href: "/badge-order",
+    icon: Award,
+    title: "Badge Order",
+    desc: "Order proficiency badges you have qualified for.",
+  },
+  {
+    href: "/my-orders",
+    icon: ClipboardList,
+    title: "My Orders",
+    desc: "View and manage your submitted orders.",
+  },
 ]
 
 type Issuance = {
@@ -80,16 +95,16 @@ export default function HomePage() {
 
       {needsPhone && (
         <Link href="/my-details" className="group">
-          <Card className="gap-2 border-primary/40 py-4 transition-colors group-hover:border-primary">
+          <Card className="border-primary/40 group-hover:border-primary gap-2 py-4 transition-colors">
             <CardContent className="flex items-center gap-3">
-              <MessageSquare className="size-4 shrink-0 text-muted-foreground" />
+              <MessageSquare className="text-muted-foreground size-4 shrink-0" />
               <div className="flex flex-col gap-0.5">
                 <p className="text-sm font-medium">Add your mobile number</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   You&apos;re not getting the parade night texts yet — add a number in My Details.
                 </p>
               </div>
-              <ArrowRight className="ml-auto size-3.5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+              <ArrowRight className="text-muted-foreground ml-auto size-3.5 shrink-0 transition-transform group-hover:translate-x-0.5" />
             </CardContent>
           </Card>
         </Link>
@@ -98,16 +113,16 @@ export default function HomePage() {
       <div className="grid gap-3 sm:grid-cols-3">
         {QUICK_LINKS.map(({ href, icon: Icon, title, desc }) => (
           <Link key={href} href={href} className="group">
-            <Card className="h-full gap-2 py-5 transition-colors group-hover:border-primary/40">
+            <Card className="group-hover:border-primary/40 h-full gap-2 py-5 transition-colors">
               <CardHeader className="pb-0">
                 <div className="flex items-center justify-between">
-                  <Icon className="size-4 text-muted-foreground" />
-                  <ArrowRight className="size-3.5 text-muted-foreground/0 transition-all group-hover:translate-x-0.5 group-hover:text-muted-foreground" />
+                  <Icon className="text-muted-foreground size-4" />
+                  <ArrowRight className="text-muted-foreground/0 group-hover:text-muted-foreground size-3.5 transition-all group-hover:translate-x-0.5" />
                 </div>
               </CardHeader>
               <CardContent className="flex flex-col gap-0.5">
                 <p className="text-sm font-medium">{title}</p>
-                <p className="text-xs text-muted-foreground">{desc}</p>
+                <p className="text-muted-foreground text-xs">{desc}</p>
               </CardContent>
             </Card>
           </Link>
@@ -120,7 +135,7 @@ export default function HomePage() {
         <Card className="gap-0 overflow-hidden py-0">
           <CardHeader className="border-b py-4">
             <CardTitle className="flex items-center gap-2 text-base">
-              <Shirt className="size-4 text-muted-foreground" />
+              <Shirt className="text-muted-foreground size-4" />
               Uniform issued to you
             </CardTitle>
           </CardHeader>
@@ -133,13 +148,13 @@ export default function HomePage() {
                     <span className="text-sm font-medium">{category}</span>
                     {record ? (
                       <div className="text-right">
-                        <p className="text-sm text-muted-foreground">{formatDate(record.lastGiven)}</p>
+                        <p className="text-muted-foreground text-sm">{formatDate(record.lastGiven)}</p>
                         {record.sizeGiven && (
-                          <p className="text-xs text-muted-foreground">Size: {record.sizeGiven}</p>
+                          <p className="text-muted-foreground text-xs">Size: {record.sizeGiven}</p>
                         )}
                       </div>
                     ) : (
-                      <span className="text-xs text-muted-foreground">Not issued</span>
+                      <span className="text-muted-foreground text-xs">Not issued</span>
                     )}
                   </div>
                 )

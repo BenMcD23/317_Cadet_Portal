@@ -52,11 +52,17 @@ function AppSidebar() {
             <SidebarMenuButton size="lg" asChild tooltip="Dashboard">
               <Link href="/" onClick={closeOnMobile}>
                 <div className="flex aspect-square size-8 items-center justify-center overflow-hidden rounded-md bg-white/90">
-                  <Image src="/317_logo.png" alt="" width={28} height={28} className="size-7 object-contain" />
+                  <Image
+                    src="/317_logo.png"
+                    alt=""
+                    width={28}
+                    height={28}
+                    className="size-7 object-contain"
+                  />
                 </div>
                 <div className="grid flex-1 text-left leading-tight">
                   <span className="truncate text-sm font-semibold">317 Squadron</span>
-                  <span className="truncate text-xs text-sidebar-foreground/60">Cadet Portal</span>
+                  <span className="text-sidebar-foreground/60 truncate text-xs">Cadet Portal</span>
                 </div>
               </Link>
             </SidebarMenuButton>
@@ -72,7 +78,11 @@ function AppSidebar() {
               <SidebarMenu>
                 {section.links.map((link) => (
                   <SidebarMenuItem key={link.href}>
-                    <SidebarMenuButton asChild tooltip={link.label} isActive={isLinkActive(pathname, link.href)}>
+                    <SidebarMenuButton
+                      asChild
+                      tooltip={link.label}
+                      isActive={isLinkActive(pathname, link.href)}
+                    >
                       <Link href={link.href} onClick={closeOnMobile}>
                         <NavIcon icon={link.icon} />
                         <span>{link.label}</span>
@@ -110,10 +120,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset className="min-w-0">
-        <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <header className="bg-background/95 supports-[backdrop-filter]:bg-background/80 sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b px-4 backdrop-blur">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-1 data-[orientation=vertical]:h-4" />
-          {title && <span className="text-sm font-medium text-muted-foreground">{title}</span>}
+          {title && <span className="text-muted-foreground text-sm font-medium">{title}</span>}
           <div className="ml-auto flex items-center gap-2">
             <ThemeToggle />
           </div>

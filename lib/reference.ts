@@ -106,14 +106,21 @@ export function useReference(): Reference {
 
 // ── Pure helpers ──────────────────────────────────────────────────────────────
 
-export function buildBadgeName(category: BadgeCategory, subType: string | null, level: string | null): string | null {
+export function buildBadgeName(
+  category: BadgeCategory,
+  subType: string | null,
+  level: string | null
+): string | null {
   if (category.items) return subType ?? null
   if (category.subTypes) return subType && level ? `${subType} – ${level}` : null
   if (category.levels) return level ? `${category.prefix} – ${level}` : null
   return null
 }
 
-export function gainedWhereLabel(options: GainedWhereOption[], value: string | null | undefined): string | null {
+export function gainedWhereLabel(
+  options: GainedWhereOption[],
+  value: string | null | undefined
+): string | null {
   return options.find((o) => o.value === value)?.label ?? null
 }
 

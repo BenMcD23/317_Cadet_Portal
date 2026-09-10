@@ -82,13 +82,13 @@ function DocList({ items }: { items: Doc[] }) {
           target="_blank"
           rel="noopener noreferrer"
           download
-          className="group flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/50 sm:gap-4 sm:px-5"
+          className="group hover:bg-muted/50 flex items-center gap-3 px-4 py-3.5 transition-colors sm:gap-4 sm:px-5"
         >
-          <span className="flex w-12 shrink-0 items-center justify-center self-stretch rounded bg-primary text-center text-xs font-bold text-primary-foreground sm:w-14">
+          <span className="bg-primary text-primary-foreground flex w-12 shrink-0 items-center justify-center self-stretch rounded text-center text-xs font-bold sm:w-14">
             {fileType(item.link)}
           </span>
           <span className="grow text-sm font-medium">{item.name}</span>
-          <Download className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
+          <Download className="text-muted-foreground group-hover:text-foreground size-4 shrink-0 transition-colors" />
         </a>
       ))}
     </Card>
@@ -118,7 +118,13 @@ export default function DocumentsPage() {
         <section key={group.title} className="flex flex-col gap-4">
           <h3 className="text-center text-xl font-semibold">{group.title}</h3>
           <div className="flex justify-center">
-            <Image src={group.badge} alt={`${group.title} badge`} width={128} height={128} className="h-24 w-auto md:h-32" />
+            <Image
+              src={group.badge}
+              alt={`${group.title} badge`}
+              width={128}
+              height={128}
+              className="h-24 w-auto md:h-32"
+            />
           </div>
           <DocList items={group.items} />
         </section>
