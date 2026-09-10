@@ -8,14 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty"
+import { EmptyState } from "@/components/empty-state"
 import { PageHeader } from "@/components/page-header"
 import { ErrorAlert } from "@/components/error-alert"
 import { SizeCombobox } from "@/components/size-combobox"
@@ -50,6 +43,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { SectionHeading } from "@/components/section-heading"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1042,37 +1036,32 @@ export default function MyOrdersPage() {
       )}
 
       {!loading && totalCount === 0 && (
-        <Empty>
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <ClipboardList />
-            </EmptyMedia>
-            <EmptyTitle>No orders yet</EmptyTitle>
-            <EmptyDescription>Place an order and it will show up here.</EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" asChild>
-                <Link href="/uniform-order">
-                  <Shirt data-icon="inline-start" />
-                  Uniform order
-                </Link>
-              </Button>
-              <Button size="sm" variant="outline" asChild>
-                <Link href="/badge-order">
-                  <Award data-icon="inline-start" />
-                  Badge order
-                </Link>
-              </Button>
-            </div>
-          </EmptyContent>
-        </Empty>
+        <EmptyState
+          icon={ClipboardList}
+          title="No orders yet"
+          description="Place an order and it will show up here."
+        >
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" asChild>
+              <Link href="/uniform-order">
+                <Shirt data-icon="inline-start" />
+                Uniform order
+              </Link>
+            </Button>
+            <Button size="sm" variant="outline" asChild>
+              <Link href="/badge-order">
+                <Award data-icon="inline-start" />
+                Badge order
+              </Link>
+            </Button>
+          </div>
+        </EmptyState>
       )}
 
       {/* Active orders */}
       {allActive.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">Active</h2>
+          <SectionHeading title="Active" />
           {allActive.map((entry) => {
             const expanded = expandedIds.has(entry.key)
 
@@ -1414,7 +1403,7 @@ export default function MyOrdersPage() {
       {/* Completed orders */}
       {allCompleted.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">Completed</h2>
+          <SectionHeading title="Completed" />
           {allCompleted.map((entry) => {
             const expanded = expandedIds.has(entry.key)
 

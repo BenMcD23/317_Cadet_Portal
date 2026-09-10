@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Image from "next/image"
 import { PageHeader } from "@/components/page-header"
+import { SectionHeading } from "@/components/section-heading"
 import { Card } from "@/components/ui/card"
 import { Download } from "lucide-react"
 
@@ -103,32 +104,40 @@ export default function DocumentsPage() {
         description="Forms, publications and exam resources for cadets and parents."
       />
 
-      <section className="flex flex-col gap-4">
-        <h2 className="text-center text-xl font-semibold">Forms</h2>
+      <section className="flex flex-col gap-3">
+        <SectionHeading title="Forms" description="Consent and medical forms to fill in and hand to staff." />
         <DocList items={forms} />
       </section>
 
-      <section className="flex flex-col gap-4">
-        <h2 className="text-center text-xl font-semibold">Publications</h2>
+      <section className="flex flex-col gap-3">
+        <SectionHeading
+          title="Publications"
+          description="The Air Cadet Publications that set the standards."
+        />
         <DocList items={publications} />
       </section>
 
-      <h2 className="text-center text-2xl font-bold">Exam Resources</h2>
-      {examResources.map((group) => (
-        <section key={group.title} className="flex flex-col gap-4">
-          <h3 className="text-center text-xl font-semibold">{group.title}</h3>
-          <div className="flex justify-center">
-            <Image
-              src={group.badge}
-              alt={`${group.title} badge`}
-              width={128}
-              height={128}
-              className="h-24 w-auto md:h-32"
-            />
-          </div>
-          <DocList items={group.items} />
-        </section>
-      ))}
+      <div className="flex flex-col gap-6">
+        <SectionHeading
+          title="Exam resources"
+          description="Reading for each classification, grouped by the badge it leads to."
+        />
+        {examResources.map((group) => (
+          <section key={group.title} className="flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+              <Image
+                src={group.badge}
+                alt=""
+                width={64}
+                height={64}
+                className="size-12 shrink-0 object-contain"
+              />
+              <h3 className="text-sm font-semibold">{group.title}</h3>
+            </div>
+            <DocList items={group.items} />
+          </section>
+        ))}
+      </div>
     </div>
   )
 }

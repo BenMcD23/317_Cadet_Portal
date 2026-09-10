@@ -13,6 +13,7 @@ import { PageHeader } from "@/components/page-header"
 import { ErrorAlert } from "@/components/error-alert"
 import { Spinner } from "@/components/ui/spinner"
 import { cn } from "@/lib/utils"
+import { SectionHeading } from "@/components/section-heading"
 import { ChevronDown, ChevronUp } from "lucide-react"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -464,9 +465,7 @@ export default function UniformOrderPage() {
         {/* Per-item sizing */}
         {orderedSelected.length > 0 && (
           <div className="space-y-3">
-            <h2 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
-              Sizing details
-            </h2>
+            <SectionHeading title="Sizing details" />
             {orderedSelected.map((itemType) => (
               <ItemSizingCard
                 key={itemType}

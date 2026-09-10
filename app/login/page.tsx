@@ -29,36 +29,42 @@ function GoogleIcon() {
 
 export default function LoginPage() {
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
-      {/* Left panel — brand */}
-      <div className="bg-sidebar text-sidebar-foreground hidden flex-col justify-between p-10 lg:flex">
-        <div className="flex items-center gap-3">
-          <Image src="/317_logo.png" alt="" width={36} height={36} className="object-contain" />
-          <span className="text-sm font-semibold tracking-wide">317 (Failsworth) Squadron RAFAC</span>
+    <div className="grid min-h-screen lg:grid-cols-[5fr_4fr]">
+      {/* Brand panel: a wash of the sidebar accent, nothing busier. */}
+      <div className="bg-sidebar text-sidebar-foreground relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-between lg:p-12">
+        <div className="from-sidebar-primary/25 pointer-events-none absolute inset-0 bg-gradient-to-br via-transparent to-transparent" />
+        <div className="relative flex items-center gap-3">
+          <Image src="/317_logo.png" alt="" width={40} height={40} className="object-contain" />
+          <div className="leading-tight">
+            <p className="text-sm font-semibold">317 (Failsworth) Squadron</p>
+            <p className="text-sidebar-foreground/60 text-xs">Royal Air Force Air Cadets</p>
+          </div>
         </div>
-        <div className="flex flex-col gap-2">
-          <p className="text-sidebar-accent-foreground text-2xl font-semibold">Cadet Portal</p>
-          <p className="text-sidebar-foreground/70 max-w-md text-sm">
-            Order uniform and badges, and keep track of what you&apos;ve been issued.
+        <div className="relative flex max-w-md flex-col gap-3">
+          <p className="text-sidebar-accent-foreground text-3xl font-semibold tracking-tight text-balance">
+            Cadet Portal
+          </p>
+          <p className="text-sidebar-foreground/70 text-sm leading-relaxed">
+            Order uniform and badges, keep your details current, and find the documents you need for
+            classification exams.
           </p>
         </div>
-        <p className="text-sidebar-foreground/50 text-xs">For 317 Squadron cadets and staff.</p>
+        <p className="text-sidebar-foreground/50 relative text-xs">For 317 Squadron cadets and staff.</p>
       </div>
 
-      {/* Right panel — sign in */}
       <div className="flex items-center justify-center p-6">
         <div className="flex w-full max-w-sm flex-col gap-8">
-          <div className="flex flex-col items-center gap-4 text-center lg:items-start lg:text-left">
+          <div className="flex flex-col items-center gap-5 text-center lg:items-start lg:text-left">
             <Image
               src="/317_logo.png"
               alt="317 Squadron crest"
-              width={72}
-              height={72}
+              width={80}
+              height={80}
               className="object-contain lg:hidden"
               priority
             />
-            <div className="flex flex-col gap-1">
-              <h1 className="text-2xl font-semibold">Sign in</h1>
+            <div className="flex flex-col gap-1.5">
+              <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
               <p className="text-muted-foreground text-sm">Use your 317 ATC Google account to continue.</p>
             </div>
           </div>
