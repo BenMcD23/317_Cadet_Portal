@@ -8,24 +8,33 @@ import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
+import { EmptyState } from "@/components/empty-state"
 import { PageHeader } from "@/components/page-header"
 import { ErrorAlert } from "@/components/error-alert"
 import { SizeCombobox } from "@/components/size-combobox"
-import { ITEM_TYPES, NO_SIZE_ITEMS, WAIST_LEG_ITEMS, CHEST_ITEMS, COLLAR_ITEMS, SEAT_ITEMS, HIPS_ITEMS } from "@/lib/uniform-items"
 import { cn } from "@/lib/utils"
-import { ChevronDown, ChevronUp, Plus, Trash2, PackageCheck, Pencil, X, Shirt, Award, ClipboardList } from "lucide-react"
+import {
+  ChevronDown,
+  ChevronUp,
+  Plus,
+  Trash2,
+  PackageCheck,
+  Pencil,
+  X,
+  Shirt,
+  Award,
+  ClipboardList,
+} from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
-  BADGE_CATEGORIES,
-  BadgeCategory,
+  type BadgeCategory,
+  type GainedWhereOption,
   buildBadgeName,
-  GAINED_WHERE_OPTIONS,
-  gainedWhereNeedsDates,
   gainedWhereLabel,
   needsGainedWhere,
-} from "@/lib/badge-types"
+  useReference,
+} from "@/lib/reference"
 import {
   Dialog,
   DialogContent,
@@ -34,6 +43,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { SectionHeading } from "@/components/section-heading"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -112,8 +122,12 @@ function parseSizingDetails(str: string): SizingDetailsJSON | null {
 
 function formatTimestamp(ts: string) {
   return new Date(ts).toLocaleString("en-GB", {
-    day: "2-digit", month: "short", year: "numeric",
-    hour: "2-digit", minute: "2-digit", hour12: false,
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
   })
 }
 
@@ -125,7 +139,7 @@ function SizingDetailsDisplay({ raw }: { raw: string }) {
   const parsed = parseSizingDetails(raw)
 
   if (!parsed) {
-    return <p className="text-xs text-muted-foreground">{raw}</p>
+    return <p className="text-muted-foreground text-xs">{raw}</p>
   }
 
   const rows: { label: string; value: string }[] = []
@@ -135,16 +149,18 @@ function SizingDetailsDisplay({ raw }: { raw: string }) {
   } else if (parsed.currentSize) {
     rows.push({ label: "Current size", value: parsed.currentSize })
   }
-  if (parsed.biggerSmaller) rows.push({ label: "Overall fit", value: FIT_LABELS[parsed.biggerSmaller] ?? parsed.biggerSmaller })
-  if (parsed.chest)  rows.push({ label: "Chest",  value: parsed.chest })
+  if (parsed.biggerSmaller)
+    rows.push({ label: "Overall fit", value: FIT_LABELS[parsed.biggerSmaller] ?? parsed.biggerSmaller })
+  if (parsed.chest) rows.push({ label: "Chest", value: parsed.chest })
   if (parsed.collar) rows.push({ label: "Collar", value: parsed.collar })
-  if (parsed.waist)  rows.push({ label: "Waist",  value: parsed.waist })
-  if (parsed.leg)    rows.push({ label: "Leg",    value: parsed.leg })
-  if (parsed.seat)   rows.push({ label: "Seat",   value: parsed.seat })
-  if (parsed.hips)   rows.push({ label: "Hips",   value: parsed.hips })
-  if (parsed.notes)  rows.push({ label: "Notes",  value: parsed.notes })
+  if (parsed.waist) rows.push({ label: "Waist", value: parsed.waist })
+  if (parsed.leg) rows.push({ label: "Leg", value: parsed.leg })
+  if (parsed.seat) rows.push({ label: "Seat", value: parsed.seat })
+  if (parsed.hips) rows.push({ label: "Hips", value: parsed.hips })
+  if (parsed.notes) rows.push({ label: "Notes", value: parsed.notes })
 
-  if (rows.length === 0) return <p className="text-xs text-muted-foreground italic">No sizing details provided</p>
+  if (rows.length === 0)
+    return <p className="text-muted-foreground text-xs italic">No sizing details provided</p>
 
   return (
     <div className="space-y-0.5">
@@ -167,9 +183,9 @@ function emptyDraft(itemType = ""): DraftItem {
 }
 
 const OVERALL_FIT_OPTIONS = [
-  { value: "bigger",  label: "Bigger" },
+  { value: "bigger", label: "Bigger" },
   { value: "smaller", label: "Smaller" },
-  { value: "same",    label: "Same size" },
+  { value: "same", label: "Same size" },
 ] as const
 
 function SizingEditor({
@@ -197,12 +213,14 @@ function SizingEditor({
   const [hips, setHips] = useState(parsed?.hips ?? "")
   const [notes, setNotes] = useState(parsed?.notes ?? "")
 
-  const noSize = NO_SIZE_ITEMS.has(itemType)
-  const showChest = CHEST_ITEMS.has(itemType)
-  const showCollar = COLLAR_ITEMS.has(itemType)
-  const showWaistLeg = WAIST_LEG_ITEMS.has(itemType)
-  const showSeat = SEAT_ITEMS.has(itemType)
-  const showHips = HIPS_ITEMS.has(itemType)
+  const { noSizeItems, sizingFields } = useReference()
+  const fields = sizingFields[itemType] ?? []
+  const noSize = noSizeItems.has(itemType)
+  const showChest = fields.includes("chest")
+  const showCollar = fields.includes("collar")
+  const showWaistLeg = fields.includes("waist")
+  const showSeat = fields.includes("seat")
+  const showHips = fields.includes("hips")
 
   function handleSave() {
     if (noSize) {
@@ -212,7 +230,18 @@ function SizingEditor({
     if (mode === "known") {
       onSave({ itemType, size, needSizing: false, sizingDetails: "" })
     } else {
-      const sd: SizingDetailsJSON = { currentSize, currentSizeUnknown: unknownSize, biggerSmaller: fit, chest, collar, waist, leg, seat, hips, notes }
+      const sd: SizingDetailsJSON = {
+        currentSize,
+        currentSizeUnknown: unknownSize,
+        biggerSmaller: fit,
+        chest,
+        collar,
+        waist,
+        leg,
+        seat,
+        hips,
+        notes,
+      }
       onSave({ itemType, size: "", needSizing: true, sizingDetails: JSON.stringify(sd) })
     }
   }
@@ -220,8 +249,12 @@ function SizingEditor({
   if (noSize) {
     return (
       <div className="flex gap-2 pt-1">
-        <Button size="sm" className="h-7 px-3 text-xs" onClick={handleSave}>Save</Button>
-        <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={onCancel}>Cancel</Button>
+        <Button size="sm" className="h-7 px-3 text-xs" onClick={handleSave}>
+          Save
+        </Button>
+        <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={onCancel}>
+          Cancel
+        </Button>
       </div>
     )
   }
@@ -231,18 +264,23 @@ function SizingEditor({
       {/* Mode toggle */}
       <div className="flex gap-2">
         {(["known", "needs-sizing"] as const).map((m) => (
-          <button key={m} type="button" onClick={() => setMode(m)}
-            className={cn("flex-1 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
-              mode === m ? "border-primary bg-primary text-primary-foreground" : "border-input bg-background hover:bg-accent"
-            )}>
+          <button
+            key={m}
+            type="button"
+            onClick={() => setMode(m)}
+            className={cn(
+              "flex-1 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
+              mode === m
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-input bg-background hover:bg-accent"
+            )}
+          >
             {m === "known" ? "I know my size" : "Need sizing"}
           </button>
         ))}
       </div>
 
-      {mode === "known" && (
-        <SizeCombobox itemType={itemType} value={size} onChange={setSize} />
-      )}
+      {mode === "known" && <SizeCombobox itemType={itemType} value={size} onChange={setSize} />}
 
       {mode === "needs-sizing" && (
         <div className="space-y-3">
@@ -253,14 +291,22 @@ function SizingEditor({
               <Checkbox
                 id={`unk-${itemType}`}
                 checked={unknownSize}
-                onCheckedChange={(c) => { setUnknownSize(!!c); if (!!c) setCurrentSize("") }}
+                onCheckedChange={(c) => {
+                  setUnknownSize(!!c)
+                  if (!!c) setCurrentSize("")
+                }}
               />
-              <Label htmlFor={`unk-${itemType}`} className="text-xs cursor-pointer">
+              <Label htmlFor={`unk-${itemType}`} className="cursor-pointer text-xs">
                 I don&apos;t know my current size
               </Label>
             </div>
             {!unknownSize && (
-              <SizeCombobox itemType={itemType} value={currentSize} onChange={setCurrentSize} placeholder="Current size…" />
+              <SizeCombobox
+                itemType={itemType}
+                value={currentSize}
+                onChange={setCurrentSize}
+                placeholder="Current size…"
+              />
             )}
           </div>
 
@@ -268,18 +314,23 @@ function SizingEditor({
           {!unknownSize && (
             <div className="space-y-1.5">
               <Label className="text-xs font-medium">Adjustments needed</Label>
-              <div className="space-y-3 rounded-md border bg-muted/30 p-3">
+              <div className="bg-muted/30 space-y-3 rounded-md border p-3">
                 {/* Overall fit */}
                 <div className="space-y-1.5">
                   <Label className="text-xs">Overall fit</Label>
                   <div className="flex gap-2">
                     {OVERALL_FIT_OPTIONS.map(({ value, label }) => (
-                      <button key={value} type="button"
+                      <button
+                        key={value}
+                        type="button"
                         onClick={() => setFit(fit === value ? "" : value)}
                         className={cn(
                           "flex-1 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
-                          fit === value ? "border-primary bg-primary text-primary-foreground" : "border-input bg-background hover:bg-accent"
-                        )}>
+                          fit === value
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-input bg-background hover:bg-accent"
+                        )}
+                      >
                         {label}
                       </button>
                     ))}
@@ -289,42 +340,77 @@ function SizingEditor({
                 {showChest && (
                   <div className="space-y-1.5">
                     <Label className="text-xs">Chest</Label>
-                    <Input placeholder="e.g. slightly bigger" value={chest} onChange={(e) => setChest(e.target.value)} className="h-8 text-sm" />
+                    <Input
+                      placeholder="e.g. slightly bigger"
+                      value={chest}
+                      onChange={(e) => setChest(e.target.value)}
+                      className="h-8 text-sm"
+                    />
                   </div>
                 )}
                 {showCollar && (
                   <div className="space-y-1.5">
                     <Label className="text-xs">Collar</Label>
-                    <Input placeholder="e.g. one size bigger" value={collar} onChange={(e) => setCollar(e.target.value)} className="h-8 text-sm" />
+                    <Input
+                      placeholder="e.g. one size bigger"
+                      value={collar}
+                      onChange={(e) => setCollar(e.target.value)}
+                      className="h-8 text-sm"
+                    />
                   </div>
                 )}
                 {showWaistLeg && (
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <Label className="text-xs">Waist (W)</Label>
-                      <Input placeholder="e.g. 2cm bigger" value={waist} onChange={(e) => setWaist(e.target.value)} className="h-8 text-sm" />
+                      <Input
+                        placeholder="e.g. 2cm bigger"
+                        value={waist}
+                        onChange={(e) => setWaist(e.target.value)}
+                        className="h-8 text-sm"
+                      />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs">Leg (L)</Label>
-                      <Input placeholder="e.g. shorter" value={leg} onChange={(e) => setLeg(e.target.value)} className="h-8 text-sm" />
+                      <Input
+                        placeholder="e.g. shorter"
+                        value={leg}
+                        onChange={(e) => setLeg(e.target.value)}
+                        className="h-8 text-sm"
+                      />
                     </div>
                   </div>
                 )}
                 {showSeat && (
                   <div className="space-y-1.5">
                     <Label className="text-xs">Seat (S)</Label>
-                    <Input placeholder="e.g. bigger" value={seat} onChange={(e) => setSeat(e.target.value)} className="h-8 text-sm" />
+                    <Input
+                      placeholder="e.g. bigger"
+                      value={seat}
+                      onChange={(e) => setSeat(e.target.value)}
+                      className="h-8 text-sm"
+                    />
                   </div>
                 )}
                 {showHips && (
                   <div className="space-y-1.5">
                     <Label className="text-xs">Hips (H)</Label>
-                    <Input placeholder="e.g. bigger" value={hips} onChange={(e) => setHips(e.target.value)} className="h-8 text-sm" />
+                    <Input
+                      placeholder="e.g. bigger"
+                      value={hips}
+                      onChange={(e) => setHips(e.target.value)}
+                      className="h-8 text-sm"
+                    />
                   </div>
                 )}
                 <div className="space-y-1.5">
                   <Label className="text-xs">Any other notes</Label>
-                  <Input placeholder="e.g. longer in the body" value={notes} onChange={(e) => setNotes(e.target.value)} className="h-8 text-sm" />
+                  <Input
+                    placeholder="e.g. longer in the body"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className="h-8 text-sm"
+                  />
                 </div>
               </div>
             </div>
@@ -333,10 +419,17 @@ function SizingEditor({
       )}
 
       <div className="flex gap-2">
-        <Button size="sm" className="h-7 px-3 text-xs"
+        <Button
+          size="sm"
+          className="h-7 px-3 text-xs"
           disabled={mode === "known" && !size.trim()}
-          onClick={handleSave}>Save</Button>
-        <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={onCancel}>Cancel</Button>
+          onClick={handleSave}
+        >
+          Save
+        </Button>
+        <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={onCancel}>
+          Cancel
+        </Button>
       </div>
     </div>
   )
@@ -344,21 +437,32 @@ function SizingEditor({
 
 // ─── Add uniform item inline ──────────────────────────────────────────────────
 
-function AddItemRow({ existingTypes, onAdd, onCancel }: {
+function AddItemRow({
+  existingTypes,
+  onAdd,
+  onCancel,
+}: {
   existingTypes: Set<string>
   onAdd: (draft: DraftItem) => void
   onCancel: () => void
 }) {
   const [itemType, setItemType] = useState("")
-  const availableTypes = ITEM_TYPES.filter((t) => !existingTypes.has(t))
+  const { itemTypes } = useReference()
+  const availableTypes = itemTypes.filter((t) => !existingTypes.has(t))
 
   return (
-    <div className="rounded-md border border-dashed p-3 space-y-2">
-      <p className="text-xs font-medium text-muted-foreground">Add item</p>
+    <div className="space-y-2 rounded-md border border-dashed p-3">
+      <p className="text-muted-foreground text-xs font-medium">Add item</p>
       <Select value={itemType} onValueChange={setItemType}>
-        <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select item…" /></SelectTrigger>
+        <SelectTrigger className="h-8 text-sm">
+          <SelectValue placeholder="Select item…" />
+        </SelectTrigger>
         <SelectContent>
-          {availableTypes.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+          {availableTypes.map((t) => (
+            <SelectItem key={t} value={t}>
+              {t}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
       {itemType && (
@@ -370,7 +474,9 @@ function AddItemRow({ existingTypes, onAdd, onCancel }: {
         />
       )}
       {!itemType && (
-        <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={onCancel}>Cancel</Button>
+        <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={onCancel}>
+          Cancel
+        </Button>
       )}
     </div>
   )
@@ -379,7 +485,12 @@ function AddItemRow({ existingTypes, onAdd, onCancel }: {
 // ─── Badge picker ─────────────────────────────────────────────────────────────
 
 function BadgePicker({
-  category, subType, level, onCategory, onSubType, onLevel,
+  category,
+  subType,
+  level,
+  onCategory,
+  onSubType,
+  onLevel,
 }: {
   category: BadgeCategory | null
   subType: string | null
@@ -388,18 +499,23 @@ function BadgePicker({
   onSubType: (s: string | null) => void
   onLevel: (l: string | null) => void
 }) {
+  const { badgeCategories } = useReference()
   return (
     <div className="space-y-2">
       <div className="space-y-1.5">
         <Label className="text-xs">Badge type</Label>
         <Select
           value={category?.id ?? ""}
-          onValueChange={(v) => onCategory(BADGE_CATEGORIES.find((c) => c.id === v) ?? null)}
+          onValueChange={(v) => onCategory(badgeCategories.find((c) => c.id === v) ?? null)}
         >
-          <SelectTrigger className="h-9"><SelectValue placeholder="Select type…" /></SelectTrigger>
+          <SelectTrigger className="h-9">
+            <SelectValue placeholder="Select type…" />
+          </SelectTrigger>
           <SelectContent>
-            {BADGE_CATEGORIES.map((c) => (
-              <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+            {badgeCategories.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -409,10 +525,14 @@ function BadgePicker({
         <div className="space-y-1.5">
           <Label className="text-xs">{category.subTypes ? "Sub-type" : "Badge"}</Label>
           <Select value={subType ?? ""} onValueChange={onSubType}>
-            <SelectTrigger className="h-9"><SelectValue placeholder="Select…" /></SelectTrigger>
+            <SelectTrigger className="h-9">
+              <SelectValue placeholder="Select…" />
+            </SelectTrigger>
             <SelectContent>
               {(category.subTypes ?? category.items ?? []).map((s) => (
-                <SelectItem key={s} value={s}>{s}</SelectItem>
+                <SelectItem key={s} value={s}>
+                  {s}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -423,10 +543,14 @@ function BadgePicker({
         <div className="space-y-1.5">
           <Label className="text-xs">Level</Label>
           <Select value={level ?? ""} onValueChange={onLevel}>
-            <SelectTrigger className="h-9"><SelectValue placeholder="Select level…" /></SelectTrigger>
+            <SelectTrigger className="h-9">
+              <SelectValue placeholder="Select level…" />
+            </SelectTrigger>
             <SelectContent>
               {category.levels.map((l) => (
-                <SelectItem key={l} value={l}>{l}</SelectItem>
+                <SelectItem key={l} value={l}>
+                  {l}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -452,24 +576,44 @@ function emptyGainedWhere(): GainedWhereState {
 function isGainedWhereComplete(g: GainedWhereState): boolean {
   if (!g.gainedWhere) return false
   if (g.gainedWhere === "other" && !g.gainedWhereDetail.trim()) return false
-  if (gainedWhereNeedsDates(g.gainedWhere) && (!g.gainedDateFrom || !g.gainedDateTo)) return false
+  if (!g.gainedDateFrom || !g.gainedDateTo) return false
   return true
 }
 
-function GainedWhereFields({ value, onChange }: { value: GainedWhereState; onChange: (v: GainedWhereState) => void }) {
-  const needsDates = gainedWhereNeedsDates(value.gainedWhere)
+function GainedWhereFields({
+  value,
+  onChange,
+}: {
+  value: GainedWhereState
+  onChange: (v: GainedWhereState) => void
+}) {
+  const { gainedWhereOptions } = useReference()
+  // Every option records the dates attended.
+  const needsDates = !!value.gainedWhere
   return (
     <div className="space-y-2">
       <div className="space-y-1.5">
         <Label className="text-xs">Gained where</Label>
         <Select
           value={value.gainedWhere ?? ""}
-          onValueChange={(v) => onChange({ ...value, gainedWhere: v, gainedWhereDetail: "", gainedDateFrom: "", gainedDateTo: "" })}
+          onValueChange={(v) =>
+            onChange({
+              ...value,
+              gainedWhere: v,
+              gainedWhereDetail: "",
+              gainedDateFrom: "",
+              gainedDateTo: "",
+            })
+          }
         >
-          <SelectTrigger className="h-9"><SelectValue placeholder="Select…" /></SelectTrigger>
+          <SelectTrigger className="h-9">
+            <SelectValue placeholder="Select…" />
+          </SelectTrigger>
           <SelectContent>
-            {GAINED_WHERE_OPTIONS.map((o) => (
-              <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+            {gainedWhereOptions.map((o) => (
+              <SelectItem key={o.value} value={o.value}>
+                {o.label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -515,8 +659,16 @@ function GainedWhereFields({ value, onChange }: { value: GainedWhereState; onCha
   )
 }
 
-function gainedWhereSummary(g: { gainedWhere?: string | null; gainedWhereDetail?: string | null; gainedDateFrom?: string | null; gainedDateTo?: string | null }): string | null {
-  const label = g.gainedWhere === "other" ? g.gainedWhereDetail : gainedWhereLabel(g.gainedWhere)
+function gainedWhereSummary(
+  options: GainedWhereOption[],
+  g: {
+    gainedWhere?: string | null
+    gainedWhereDetail?: string | null
+    gainedDateFrom?: string | null
+    gainedDateTo?: string | null
+  }
+): string | null {
+  const label = g.gainedWhere === "other" ? g.gainedWhereDetail : gainedWhereLabel(options, g.gainedWhere)
   if (!label) return null
   if (g.gainedDateFrom && g.gainedDateTo) {
     return `${label} (${g.gainedDateFrom.slice(0, 10)} – ${g.gainedDateTo.slice(0, 10)})`
@@ -526,7 +678,10 @@ function gainedWhereSummary(g: { gainedWhere?: string | null; gainedWhereDetail?
 
 // ─── Add badge inline ─────────────────────────────────────────────────────────
 
-function AddBadgeRow({ onAdd, onCancel }: {
+function AddBadgeRow({
+  onAdd,
+  onCancel,
+}: {
   onAdd: (badgeName: string, replacement: boolean, gainedWhere: GainedWhereState) => void
   onCancel: () => void
 }) {
@@ -536,8 +691,9 @@ function AddBadgeRow({ onAdd, onCancel }: {
   const [replacement, setReplacement] = useState(false)
   const [gainedWhere, setGainedWhere] = useState<GainedWhereState>(emptyGainedWhere())
 
+  const { categoriesWithoutGainedWhere } = useReference()
   const badgeName = category ? buildBadgeName(category, subType, level) : null
-  const gainedWhereApplies = needsGainedWhere(category?.id, replacement)
+  const gainedWhereApplies = needsGainedWhere(categoriesWithoutGainedWhere, category?.id, replacement)
 
   function handleAdd() {
     if (!badgeName) return
@@ -546,36 +702,43 @@ function AddBadgeRow({ onAdd, onCancel }: {
   }
 
   return (
-    <div className="rounded-md border border-dashed p-3 space-y-3">
-      <p className="text-xs font-medium text-muted-foreground">Add badge</p>
+    <div className="space-y-3 rounded-md border border-dashed p-3">
+      <p className="text-muted-foreground text-xs font-medium">Add badge</p>
       <BadgePicker
         category={category}
         subType={subType}
         level={level}
-        onCategory={(c) => { setCategory(c); setSubType(null); setLevel(null) }}
-        onSubType={(s) => { setSubType(s); setLevel(null) }}
+        onCategory={(c) => {
+          setCategory(c)
+          setSubType(null)
+          setLevel(null)
+        }}
+        onSubType={(s) => {
+          setSubType(s)
+          setLevel(null)
+        }}
         onLevel={setLevel}
       />
       {badgeName && (
         <label className="flex cursor-pointer items-center gap-2 text-xs">
-          <Checkbox
-            checked={replacement}
-            onCheckedChange={(v) => setReplacement(v === true)}
-          />
+          <Checkbox checked={replacement} onCheckedChange={(v) => setReplacement(v === true)} />
           Replacement for a lost/damaged badge (£2 fee)
         </label>
       )}
-      {badgeName && gainedWhereApplies && (
-        <GainedWhereFields value={gainedWhere} onChange={setGainedWhere} />
-      )}
+      {badgeName && gainedWhereApplies && <GainedWhereFields value={gainedWhere} onChange={setGainedWhere} />}
       <div className="flex gap-2">
-        <Button size="sm" className="h-7 px-3 text-xs"
+        <Button
+          size="sm"
+          className="h-7 px-3 text-xs"
           disabled={!badgeName || (gainedWhereApplies && !isGainedWhereComplete(gainedWhere))}
-          onClick={handleAdd}>
+          onClick={handleAdd}
+        >
           <Plus className="mr-1 h-3.5 w-3.5" />
           Add Badge
         </Button>
-        <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={onCancel}>Cancel</Button>
+        <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={onCancel}>
+          Cancel
+        </Button>
       </div>
     </div>
   )
@@ -588,6 +751,7 @@ type Entry =
   | { key: string; ts: number; kind: "badge"; order: BadgeOrder }
 
 export default function MyOrdersPage() {
+  const { itemTypes, gainedWhereOptions } = useReference()
   const [uniformOrders, setUniformOrders] = useState<Order[]>([])
   const [badgeOrders, setBadgeOrders] = useState<BadgeOrder[]>([])
   const [loading, setLoading] = useState(true)
@@ -611,8 +775,6 @@ export default function MyOrdersPage() {
     | { kind: "badge"; order: BadgeOrder; itemId: string; label: string }
   const [pendingRemove, setPendingRemove] = useState<PendingRemove | null>(null)
 
-  useEffect(() => { fetchAll() }, [])
-
   async function fetchAll() {
     setLoading(true)
     setError(null)
@@ -634,10 +796,16 @@ export default function MyOrdersPage() {
     }
   }
 
+  // Load once on mount.
+  useEffect(() => {
+    fetchAll()
+  }, [])
+
   function toggleExpand(key: string) {
     setExpandedIds((prev) => {
       const next = new Set(prev)
-      next.has(key) ? next.delete(key) : next.add(key)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
       return next
     })
   }
@@ -646,9 +814,10 @@ export default function MyOrdersPage() {
 
   function orderEndpoint(orderId: string) {
     const order = uniformOrders.find((o) => o.id === orderId)
-    const base = order && (order as { subjectType?: string }).subjectType === "user"
-      ? "/api/user/orders"
-      : "/api/cadet/orders"
+    const base =
+      order && (order as { subjectType?: string }).subjectType === "user"
+        ? "/api/user/orders"
+        : "/api/cadet/orders"
     return `${base}/${orderId}`
   }
 
@@ -662,7 +831,7 @@ export default function MyOrdersPage() {
       })
       if (!res.ok) throw new Error("Failed to update order")
       const updated: Order = await res.json()
-      setUniformOrders((prev) => prev.map((o) => o.id === updated.id ? updated : o))
+      setUniformOrders((prev) => prev.map((o) => (o.id === updated.id ? updated : o)))
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unknown error")
     } finally {
@@ -690,7 +859,12 @@ export default function MyOrdersPage() {
   function handleAddItem(order: Order, draft: DraftItem) {
     const nonGivenItems: DraftItem[] = order.items
       .filter((i) => !i.givenAt)
-      .map((i) => ({ itemType: i.itemType, size: i.size, needSizing: i.needSizing, sizingDetails: i.sizingDetails }))
+      .map((i) => ({
+        itemType: i.itemType,
+        size: i.size,
+        needSizing: i.needSizing,
+        sizingDetails: i.sizingDetails,
+      }))
     patchOrder(order.id, [...nonGivenItems, draft])
     setAddingToId(null)
   }
@@ -698,16 +872,22 @@ export default function MyOrdersPage() {
   function handleRemoveItem(order: Order, itemId: string) {
     const remaining: DraftItem[] = order.items
       .filter((i) => !i.givenAt && i.id !== itemId)
-      .map((i) => ({ itemType: i.itemType, size: i.size, needSizing: i.needSizing, sizingDetails: i.sizingDetails }))
+      .map((i) => ({
+        itemType: i.itemType,
+        size: i.size,
+        needSizing: i.needSizing,
+        sizingDetails: i.sizingDetails,
+      }))
     patchOrder(order.id, remaining)
   }
 
   function handleEditSave(order: Order, itemId: string, draft: DraftItem) {
     const items: DraftItem[] = order.items
       .filter((i) => !i.givenAt)
-      .map((i) => i.id === itemId
-        ? draft
-        : { itemType: i.itemType, size: i.size, needSizing: i.needSizing, sizingDetails: i.sizingDetails }
+      .map((i) =>
+        i.id === itemId
+          ? draft
+          : { itemType: i.itemType, size: i.size, needSizing: i.needSizing, sizingDetails: i.sizingDetails }
       )
     patchOrder(order.id, items)
     setEditingItemId(null)
@@ -745,7 +925,7 @@ export default function MyOrdersPage() {
       })
       if (!res.ok) throw new Error("Failed to update badge order")
       const updated: BadgeOrder = await res.json()
-      setBadgeOrders((prev) => prev.map((o) => o.id === updated.id ? updated : o))
+      setBadgeOrders((prev) => prev.map((o) => (o.id === updated.id ? updated : o)))
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unknown error")
     } finally {
@@ -770,36 +950,70 @@ export default function MyOrdersPage() {
     }
   }
 
-  function handleAddBadge(order: BadgeOrder, badgeName: string, replacement: boolean, gainedWhere: GainedWhereState) {
+  function handleAddBadge(
+    order: BadgeOrder,
+    badgeName: string,
+    replacement: boolean,
+    gainedWhere: GainedWhereState
+  ) {
     const nonGiven = order.items.filter((i) => !i.givenAt).map(toBadgeItemDraft)
-    patchBadgeOrder(order.id, [...nonGiven, {
-      badgeName,
-      replacement,
-      gainedWhere: gainedWhere.gainedWhere,
-      gainedWhereDetail: gainedWhere.gainedWhereDetail,
-      gainedDateFrom: gainedWhere.gainedDateFrom,
-      gainedDateTo: gainedWhere.gainedDateTo,
-    }])
+    patchBadgeOrder(order.id, [
+      ...nonGiven,
+      {
+        badgeName,
+        replacement,
+        gainedWhere: gainedWhere.gainedWhere,
+        gainedWhereDetail: gainedWhere.gainedWhereDetail,
+        gainedDateFrom: gainedWhere.gainedDateFrom,
+        gainedDateTo: gainedWhere.gainedDateTo,
+      },
+    ])
     setAddingToBadgeId(null)
   }
 
   function handleRemoveBadge(order: BadgeOrder, itemId: string) {
-    const remaining = order.items
-      .filter((i) => !i.givenAt && i.id !== itemId)
-      .map(toBadgeItemDraft)
+    const remaining = order.items.filter((i) => !i.givenAt && i.id !== itemId).map(toBadgeItemDraft)
     patchBadgeOrder(order.id, remaining)
   }
 
   // ─── Combined sorted lists ──────────────────────────────────────────────────
 
   const allActive: Entry[] = [
-    ...uniformOrders.filter((o) => !o.completed).map((o) => ({ key: `u-${o.id}`, ts: new Date(o.timestamp).getTime(), kind: "uniform" as const, order: o })),
-    ...badgeOrders.filter((o) => !o.completed).map((o) => ({ key: `b-${o.id}`, ts: new Date(o.timestamp).getTime(), kind: "badge" as const, order: o })),
+    ...uniformOrders
+      .filter((o) => !o.completed)
+      .map((o) => ({
+        key: `u-${o.id}`,
+        ts: new Date(o.timestamp).getTime(),
+        kind: "uniform" as const,
+        order: o,
+      })),
+    ...badgeOrders
+      .filter((o) => !o.completed)
+      .map((o) => ({
+        key: `b-${o.id}`,
+        ts: new Date(o.timestamp).getTime(),
+        kind: "badge" as const,
+        order: o,
+      })),
   ].sort((a, b) => b.ts - a.ts)
 
   const allCompleted: Entry[] = [
-    ...uniformOrders.filter((o) => o.completed).map((o) => ({ key: `u-${o.id}`, ts: new Date(o.timestamp).getTime(), kind: "uniform" as const, order: o })),
-    ...badgeOrders.filter((o) => o.completed).map((o) => ({ key: `b-${o.id}`, ts: new Date(o.timestamp).getTime(), kind: "badge" as const, order: o })),
+    ...uniformOrders
+      .filter((o) => o.completed)
+      .map((o) => ({
+        key: `u-${o.id}`,
+        ts: new Date(o.timestamp).getTime(),
+        kind: "uniform" as const,
+        order: o,
+      })),
+    ...badgeOrders
+      .filter((o) => o.completed)
+      .map((o) => ({
+        key: `b-${o.id}`,
+        ts: new Date(o.timestamp).getTime(),
+        kind: "badge" as const,
+        order: o,
+      })),
   ].sort((a, b) => b.ts - a.ts)
 
   const totalCount = uniformOrders.length + badgeOrders.length
@@ -822,37 +1036,32 @@ export default function MyOrdersPage() {
       )}
 
       {!loading && totalCount === 0 && (
-        <Empty>
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <ClipboardList />
-            </EmptyMedia>
-            <EmptyTitle>No orders yet</EmptyTitle>
-            <EmptyDescription>Place an order and it will show up here.</EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" asChild>
-                <Link href="/uniform-order">
-                  <Shirt data-icon="inline-start" />
-                  Uniform order
-                </Link>
-              </Button>
-              <Button size="sm" variant="outline" asChild>
-                <Link href="/badge-order">
-                  <Award data-icon="inline-start" />
-                  Badge order
-                </Link>
-              </Button>
-            </div>
-          </EmptyContent>
-        </Empty>
+        <EmptyState
+          icon={ClipboardList}
+          title="No orders yet"
+          description="Place an order and it will show up here."
+        >
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" asChild>
+              <Link href="/uniform-order">
+                <Shirt data-icon="inline-start" />
+                Uniform order
+              </Link>
+            </Button>
+            <Button size="sm" variant="outline" asChild>
+              <Link href="/badge-order">
+                <Award data-icon="inline-start" />
+                Badge order
+              </Link>
+            </Button>
+          </div>
+        </EmptyState>
       )}
 
       {/* Active orders */}
       {allActive.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Active</h2>
+          <SectionHeading title="Active" />
           {allActive.map((entry) => {
             const expanded = expandedIds.has(entry.key)
 
@@ -866,18 +1075,22 @@ export default function MyOrdersPage() {
                 <Card key={entry.key}>
                   <CardHeader className="pb-0">
                     <div className="flex items-center justify-between gap-2">
-                      <div className="flex-1 min-w-0 flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-medium">
+                      <div className="flex min-w-0 flex-1 items-center gap-2">
+                        <span className="bg-primary/10 text-primary inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium">
                           <Shirt className="h-3 w-3" /> Uniform
                         </span>
-                        <p className="text-xs text-muted-foreground">{formatTimestamp(order.timestamp)}</p>
+                        <p className="text-muted-foreground text-xs">{formatTimestamp(order.timestamp)}</p>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
                         <Badge variant="secondary" className="text-xs">
                           {order.items.length} item{order.items.length !== 1 ? "s" : ""}
                         </Badge>
-                        <Button size="icon" variant="ghost" className="h-8 w-8"
-                          onClick={() => toggleExpand(entry.key)}>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => toggleExpand(entry.key)}
+                        >
                           {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                         </Button>
                       </div>
@@ -885,35 +1098,52 @@ export default function MyOrdersPage() {
                   </CardHeader>
 
                   {expanded && (
-                    <CardContent className="pt-4 space-y-3">
+                    <CardContent className="space-y-3 pt-4">
                       <ul className="space-y-2">
                         {order.items.map((item) => {
                           const isEditing = editingItemId === item.id
                           const canEdit = !item.givenAt
 
                           return (
-                            <li key={item.id} className="rounded-md border bg-muted/30 p-3 space-y-2">
+                            <li key={item.id} className="bg-muted/30 space-y-2 rounded-md border p-3">
                               <div className="flex items-start justify-between gap-2">
-                                <div className="flex-1 min-w-0 space-y-1">
+                                <div className="min-w-0 flex-1 space-y-1">
                                   <p className="text-sm font-medium">{item.itemType}</p>
                                   {item.needSizing ? (
                                     <SizingDetailsDisplay raw={item.sizingDetails} />
                                   ) : (
-                                    <p className="text-xs text-muted-foreground">Size: {item.size || "—"}</p>
+                                    <p className="text-muted-foreground text-xs">Size: {item.size || "—"}</p>
                                   )}
                                 </div>
                                 {canEdit && !isEditing && (
-                                  <div className="flex gap-1.5 shrink-0">
-                                    <Button size="icon" variant="ghost" className="h-7 w-7"
-                                      onClick={() => { setEditingItemId(item.id); setAddingToId(null) }}
-                                      aria-label="Edit sizing">
+                                  <div className="flex shrink-0 gap-1.5">
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className="h-7 w-7"
+                                      onClick={() => {
+                                        setEditingItemId(item.id)
+                                        setAddingToId(null)
+                                      }}
+                                      aria-label="Edit sizing"
+                                    >
                                       <Pencil className="h-3.5 w-3.5" />
                                     </Button>
-                                    <Button size="icon" variant="ghost"
-                                      className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className="text-destructive hover:bg-destructive/10 hover:text-destructive h-7 w-7"
                                       disabled={isSaving}
-                                      onClick={() => setPendingRemove({ kind: "uniform", order, itemId: item.id, label: item.itemType })}
-                                      aria-label="Remove item">
+                                      onClick={() =>
+                                        setPendingRemove({
+                                          kind: "uniform",
+                                          order,
+                                          itemId: item.id,
+                                          label: item.itemType,
+                                        })
+                                      }
+                                      aria-label="Remove item"
+                                    >
                                       <Trash2 className="h-3.5 w-3.5" />
                                     </Button>
                                   </div>
@@ -921,9 +1151,9 @@ export default function MyOrdersPage() {
                               </div>
 
                               {item.givenAt && (
-                                <div className="flex items-center gap-1.5 rounded-md bg-success/10 border border-success/30 px-2.5 py-1.5">
-                                  <PackageCheck className="h-3 w-3 shrink-0 text-success" />
-                                  <p className="text-xs text-success">
+                                <div className="bg-success/10 border-success/30 flex items-center gap-1.5 rounded-md border px-2.5 py-1.5">
+                                  <PackageCheck className="text-success h-3 w-3 shrink-0" />
+                                  <p className="text-success text-xs">
                                     Issued {formatTimestamp(item.givenAt)}
                                     {item.givenBy && <> · {item.givenBy}</>}
                                   </p>
@@ -933,7 +1163,11 @@ export default function MyOrdersPage() {
                               {isEditing && (
                                 <SizingEditor
                                   itemType={item.itemType}
-                                  initial={{ size: item.size, sizingDetails: item.sizingDetails, needSizing: item.needSizing }}
+                                  initial={{
+                                    size: item.size,
+                                    sizingDetails: item.sizingDetails,
+                                    needSizing: item.needSizing,
+                                  }}
                                   onSave={(draft) => handleEditSave(order, item.id, draft)}
                                   onCancel={() => setEditingItemId(null)}
                                 />
@@ -950,36 +1184,56 @@ export default function MyOrdersPage() {
                           onCancel={() => setAddingToId(null)}
                         />
                       ) : (
-                        <Button size="sm" variant="outline" className="w-full h-8 text-xs"
-                          disabled={isSaving || existingTypes.size >= ITEM_TYPES.length}
-                          onClick={() => { setAddingToId(order.id); setEditingItemId(null) }}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 w-full text-xs"
+                          disabled={isSaving || existingTypes.size >= itemTypes.length}
+                          onClick={() => {
+                            setAddingToId(order.id)
+                            setEditingItemId(null)
+                          }}
+                        >
                           <Plus className="mr-1.5 h-3.5 w-3.5" />
                           Add Item
                         </Button>
                       )}
 
                       {confirmCancelId === order.id ? (
-                        <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 space-y-2">
-                          <p className="text-sm font-medium text-destructive">Cancel this order?</p>
-                          <p className="text-xs text-muted-foreground">This cannot be undone. Any items not yet issued will be removed.</p>
+                        <div className="border-destructive/30 bg-destructive/10 space-y-2 rounded-md border p-3">
+                          <p className="text-destructive text-sm font-medium">Cancel this order?</p>
+                          <p className="text-muted-foreground text-xs">
+                            This cannot be undone. Any items not yet issued will be removed.
+                          </p>
                           <div className="flex gap-2">
-                            <Button size="sm" variant="destructive" className="h-7 px-3 text-xs"
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="h-7 px-3 text-xs"
                               disabled={isSaving}
-                              onClick={() => cancelOrder(order.id)}>
+                              onClick={() => cancelOrder(order.id)}
+                            >
                               {isSaving ? "Cancelling…" : "Yes, cancel order"}
                             </Button>
-                            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs"
-                              onClick={() => setConfirmCancelId(null)}>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2 text-xs"
+                              onClick={() => setConfirmCancelId(null)}
+                            >
                               Keep order
                             </Button>
                           </div>
                         </div>
                       ) : noneGiven ? (
                         <div className="flex justify-end">
-                          <Button size="sm" variant="ghost"
-                            className="h-7 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-destructive hover:bg-destructive/10 hover:text-destructive h-7 text-xs"
                             disabled={isSaving}
-                            onClick={() => setConfirmCancelId(order.id)}>
+                            onClick={() => setConfirmCancelId(order.id)}
+                          >
                             <X className="mr-1 h-3.5 w-3.5" />
                             Cancel order
                           </Button>
@@ -1000,18 +1254,22 @@ export default function MyOrdersPage() {
               <Card key={entry.key}>
                 <CardHeader className="pb-0">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex-1 min-w-0 flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-warning/15 text-warning px-2 py-0.5 text-[10px] font-medium">
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                      <span className="bg-warning/15 text-warning inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium">
                         <Award className="h-3 w-3" /> Badge
                       </span>
-                      <p className="text-xs text-muted-foreground">{formatTimestamp(order.timestamp)}</p>
+                      <p className="text-muted-foreground text-xs">{formatTimestamp(order.timestamp)}</p>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       <Badge variant="secondary" className="text-xs">
                         {order.items.length} badge{order.items.length !== 1 ? "s" : ""}
                       </Badge>
-                      <Button size="icon" variant="ghost" className="h-8 w-8"
-                        onClick={() => toggleExpand(entry.key)}>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8"
+                        onClick={() => toggleExpand(entry.key)}
+                      >
                         {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                       </Button>
                     </div>
@@ -1019,10 +1277,10 @@ export default function MyOrdersPage() {
                 </CardHeader>
 
                 {expanded && (
-                  <CardContent className="pt-4 space-y-3">
+                  <CardContent className="space-y-3 pt-4">
                     <ul className="space-y-2">
                       {order.items.map((item) => (
-                        <li key={item.id} className="rounded-md border bg-muted/30 p-3 space-y-2">
+                        <li key={item.id} className="bg-muted/30 space-y-2 rounded-md border p-3">
                           <div className="flex items-start justify-between gap-2">
                             <span className="min-w-0 flex-1">
                               <p className="text-sm font-medium">
@@ -1033,25 +1291,37 @@ export default function MyOrdersPage() {
                                   </span>
                                 )}
                               </p>
-                              {gainedWhereSummary(item) && (
-                                <p className="text-xs text-muted-foreground">{gainedWhereSummary(item)}</p>
+                              {gainedWhereSummary(gainedWhereOptions, item) && (
+                                <p className="text-muted-foreground text-xs">
+                                  {gainedWhereSummary(gainedWhereOptions, item)}
+                                </p>
                               )}
                             </span>
                             {!item.givenAt && (
-                              <Button size="icon" variant="ghost"
-                                className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="text-destructive hover:bg-destructive/10 hover:text-destructive h-7 w-7"
                                 disabled={isSaving}
-                                onClick={() => setPendingRemove({ kind: "badge", order, itemId: item.id, label: item.badgeName })}
-                                aria-label="Remove badge">
+                                onClick={() =>
+                                  setPendingRemove({
+                                    kind: "badge",
+                                    order,
+                                    itemId: item.id,
+                                    label: item.badgeName,
+                                  })
+                                }
+                                aria-label="Remove badge"
+                              >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </Button>
                             )}
                           </div>
 
                           {item.givenAt && (
-                            <div className="flex items-center gap-1.5 rounded-md bg-success/10 border border-success/30 px-2.5 py-1.5">
-                              <PackageCheck className="h-3 w-3 shrink-0 text-success" />
-                              <p className="text-xs text-success">
+                            <div className="bg-success/10 border-success/30 flex items-center gap-1.5 rounded-md border px-2.5 py-1.5">
+                              <PackageCheck className="text-success h-3 w-3 shrink-0" />
+                              <p className="text-success text-xs">
                                 Issued {formatTimestamp(item.givenAt)}
                                 {item.givenBy && <> · {item.givenBy}</>}
                               </p>
@@ -1063,40 +1333,60 @@ export default function MyOrdersPage() {
 
                     {addingToBadgeId === order.id ? (
                       <AddBadgeRow
-                        onAdd={(badgeName, replacement, gainedWhere) => handleAddBadge(order, badgeName, replacement, gainedWhere)}
+                        onAdd={(badgeName, replacement, gainedWhere) =>
+                          handleAddBadge(order, badgeName, replacement, gainedWhere)
+                        }
                         onCancel={() => setAddingToBadgeId(null)}
                       />
                     ) : (
-                      <Button size="sm" variant="outline" className="w-full h-8 text-xs"
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 w-full text-xs"
                         disabled={isSaving}
-                        onClick={() => { setAddingToBadgeId(order.id); setAddingToId(null) }}>
+                        onClick={() => {
+                          setAddingToBadgeId(order.id)
+                          setAddingToId(null)
+                        }}
+                      >
                         <Plus className="mr-1.5 h-3.5 w-3.5" />
                         Add Badge
                       </Button>
                     )}
 
                     {confirmCancelBadgeId === order.id ? (
-                      <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 space-y-2">
-                        <p className="text-sm font-medium text-destructive">Cancel this badge order?</p>
-                        <p className="text-xs text-muted-foreground">This cannot be undone.</p>
+                      <div className="border-destructive/30 bg-destructive/10 space-y-2 rounded-md border p-3">
+                        <p className="text-destructive text-sm font-medium">Cancel this badge order?</p>
+                        <p className="text-muted-foreground text-xs">This cannot be undone.</p>
                         <div className="flex gap-2">
-                          <Button size="sm" variant="destructive" className="h-7 px-3 text-xs"
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="h-7 px-3 text-xs"
                             disabled={isSaving}
-                            onClick={() => cancelBadgeOrder(order.id)}>
+                            onClick={() => cancelBadgeOrder(order.id)}
+                          >
                             {isSaving ? "Cancelling…" : "Yes, cancel order"}
                           </Button>
-                          <Button size="sm" variant="ghost" className="h-7 px-2 text-xs"
-                            onClick={() => setConfirmCancelBadgeId(null)}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 text-xs"
+                            onClick={() => setConfirmCancelBadgeId(null)}
+                          >
                             Keep order
                           </Button>
                         </div>
                       </div>
                     ) : noneGiven ? (
                       <div className="flex justify-end">
-                        <Button size="sm" variant="ghost"
-                          className="h-7 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive hover:bg-destructive/10 hover:text-destructive h-7 text-xs"
                           disabled={isSaving}
-                          onClick={() => setConfirmCancelBadgeId(order.id)}>
+                          onClick={() => setConfirmCancelBadgeId(order.id)}
+                        >
                           <X className="mr-1 h-3.5 w-3.5" />
                           Cancel order
                         </Button>
@@ -1113,7 +1403,7 @@ export default function MyOrdersPage() {
       {/* Completed orders */}
       {allCompleted.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Completed</h2>
+          <SectionHeading title="Completed" />
           {allCompleted.map((entry) => {
             const expanded = expandedIds.has(entry.key)
 
@@ -1123,12 +1413,12 @@ export default function MyOrdersPage() {
                 <Card key={entry.key} className="opacity-75">
                   <CardHeader className="pb-0">
                     <div className="flex items-center justify-between gap-2">
-                      <div className="flex-1 min-w-0 flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-medium">
+                      <div className="flex min-w-0 flex-1 items-center gap-2">
+                        <span className="bg-primary/10 text-primary inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium">
                           <Shirt className="h-3 w-3" /> Uniform
                         </span>
-                        <p className="text-xs text-muted-foreground">{formatTimestamp(order.timestamp)}</p>
-                        <Badge className="text-xs border-success/40 bg-success/10 text-success">
+                        <p className="text-muted-foreground text-xs">{formatTimestamp(order.timestamp)}</p>
+                        <Badge className="border-success/40 bg-success/10 text-success text-xs">
                           Completed
                         </Badge>
                       </div>
@@ -1136,8 +1426,12 @@ export default function MyOrdersPage() {
                         <Badge variant="secondary" className="text-xs">
                           {order.items.length} item{order.items.length !== 1 ? "s" : ""}
                         </Badge>
-                        <Button size="icon" variant="ghost" className="h-8 w-8"
-                          onClick={() => toggleExpand(entry.key)}>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => toggleExpand(entry.key)}
+                        >
                           {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                         </Button>
                       </div>
@@ -1147,15 +1441,17 @@ export default function MyOrdersPage() {
                     <CardContent className="pt-4">
                       <ul className="space-y-2">
                         {order.items.map((item) => (
-                          <li key={item.id} className="rounded-md border bg-muted/30 p-3 space-y-1">
+                          <li key={item.id} className="bg-muted/30 space-y-1 rounded-md border p-3">
                             <p className="text-sm font-medium">{item.itemType}</p>
-                            {item.needSizing
-                              ? <SizingDetailsDisplay raw={item.sizingDetails} />
-                              : <p className="text-xs text-muted-foreground">Size: {item.size || "—"}</p>}
+                            {item.needSizing ? (
+                              <SizingDetailsDisplay raw={item.sizingDetails} />
+                            ) : (
+                              <p className="text-muted-foreground text-xs">Size: {item.size || "—"}</p>
+                            )}
                             {item.givenAt && (
-                              <div className="flex items-center gap-1.5 rounded-md bg-success/10 border border-success/30 px-2.5 py-1.5">
-                                <PackageCheck className="h-3 w-3 shrink-0 text-success" />
-                                <p className="text-xs text-success">
+                              <div className="bg-success/10 border-success/30 flex items-center gap-1.5 rounded-md border px-2.5 py-1.5">
+                                <PackageCheck className="text-success h-3 w-3 shrink-0" />
+                                <p className="text-success text-xs">
                                   Issued {formatTimestamp(item.givenAt)}
                                   {item.givenBy && <> · {item.givenBy}</>}
                                 </p>
@@ -1176,12 +1472,12 @@ export default function MyOrdersPage() {
               <Card key={entry.key} className="opacity-75">
                 <CardHeader className="pb-0">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex-1 min-w-0 flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-warning/15 text-warning px-2 py-0.5 text-[10px] font-medium">
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                      <span className="bg-warning/15 text-warning inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium">
                         <Award className="h-3 w-3" /> Badge
                       </span>
-                      <p className="text-xs text-muted-foreground">{formatTimestamp(order.timestamp)}</p>
-                      <Badge className="text-xs border-success/40 bg-success/10 text-success">
+                      <p className="text-muted-foreground text-xs">{formatTimestamp(order.timestamp)}</p>
+                      <Badge className="border-success/40 bg-success/10 text-success text-xs">
                         Completed
                       </Badge>
                     </div>
@@ -1189,8 +1485,12 @@ export default function MyOrdersPage() {
                       <Badge variant="secondary" className="text-xs">
                         {order.items.length} badge{order.items.length !== 1 ? "s" : ""}
                       </Badge>
-                      <Button size="icon" variant="ghost" className="h-8 w-8"
-                        onClick={() => toggleExpand(entry.key)}>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8"
+                        onClick={() => toggleExpand(entry.key)}
+                      >
                         {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                       </Button>
                     </div>
@@ -1200,7 +1500,7 @@ export default function MyOrdersPage() {
                   <CardContent className="pt-4">
                     <ul className="space-y-2">
                       {order.items.map((item) => (
-                        <li key={item.id} className="rounded-md border bg-muted/30 p-3 space-y-1">
+                        <li key={item.id} className="bg-muted/30 space-y-1 rounded-md border p-3">
                           <p className="text-sm font-medium">
                             {item.badgeName}
                             {item.replacement && (
@@ -1209,13 +1509,15 @@ export default function MyOrdersPage() {
                               </span>
                             )}
                           </p>
-                          {gainedWhereSummary(item) && (
-                            <p className="text-xs text-muted-foreground">{gainedWhereSummary(item)}</p>
+                          {gainedWhereSummary(gainedWhereOptions, item) && (
+                            <p className="text-muted-foreground text-xs">
+                              {gainedWhereSummary(gainedWhereOptions, item)}
+                            </p>
                           )}
                           {item.givenAt && (
-                            <div className="flex items-center gap-1.5 rounded-md bg-success/10 border border-success/30 px-2.5 py-1.5">
-                              <PackageCheck className="h-3 w-3 shrink-0 text-success" />
-                              <p className="text-xs text-success">
+                            <div className="bg-success/10 border-success/30 flex items-center gap-1.5 rounded-md border px-2.5 py-1.5">
+                              <PackageCheck className="text-success h-3 w-3 shrink-0" />
+                              <p className="text-success text-xs">
                                 Issued {formatTimestamp(item.givenAt)}
                                 {item.givenBy && <> · {item.givenBy}</>}
                               </p>
@@ -1233,16 +1535,24 @@ export default function MyOrdersPage() {
       )}
 
       {/* Confirm remove item dialog */}
-      <Dialog open={!!pendingRemove} onOpenChange={(open) => { if (!open) setPendingRemove(null) }}>
+      <Dialog
+        open={!!pendingRemove}
+        onOpenChange={(open) => {
+          if (!open) setPendingRemove(null)
+        }}
+      >
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Remove item?</DialogTitle>
             <DialogDescription>
-              <span className="font-medium text-foreground">{pendingRemove?.label}</span> will be removed from your order. This cannot be undone.
+              <span className="text-foreground font-medium">{pendingRemove?.label}</span> will be removed from
+              your order. This cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
-            <Button variant="ghost" onClick={() => setPendingRemove(null)}>Keep it</Button>
+            <Button variant="ghost" onClick={() => setPendingRemove(null)}>
+              Keep it
+            </Button>
             <Button
               variant="destructive"
               onClick={() => {

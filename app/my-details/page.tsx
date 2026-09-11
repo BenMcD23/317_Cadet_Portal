@@ -96,7 +96,7 @@ export default function MyDetailsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <MessageSquare className="size-4 text-muted-foreground" />
+              <MessageSquare className="text-muted-foreground size-4" />
               Parade night texts
             </CardTitle>
             <CardDescription>
@@ -126,7 +126,7 @@ export default function MyDetailsPage() {
                 </Button>
               </div>
               {saved && (
-                <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <p className="text-muted-foreground flex items-center gap-1.5 text-sm">
                   <CheckCircle2 className="size-3.5" />
                   {phone ? "Saved — you're on the list." : "Saved — you'll no longer get the texts."}
                 </p>
@@ -149,9 +149,8 @@ export default function MyDetailsPage() {
                 </div>
               </dl>
             )}
-            <p className="text-xs text-muted-foreground">
-              Name, CIN and email come from the squadron records — speak to staff if any
-              of them are wrong.
+            <p className="text-muted-foreground text-xs">
+              Name, CIN and email come from the squadron records — speak to staff if any of them are wrong.
             </p>
           </CardContent>
         </Card>
@@ -164,9 +163,7 @@ export default function MyDetailsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Join the WhatsApp community</CardTitle>
-            <CardDescription>
-              Open the link on the phone your WhatsApp is on.
-            </CardDescription>
+            <CardDescription>Open the link on the phone your WhatsApp is on.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <Button asChild className="w-fit">
@@ -174,7 +171,7 @@ export default function MyDetailsPage() {
                 Open invite <ExternalLink className="size-3.5" />
               </a>
             </Button>
-            <p className="break-all font-mono text-xs text-muted-foreground">{inviteUrl}</p>
+            <p className="text-muted-foreground font-mono text-xs break-all">{inviteUrl}</p>
           </CardContent>
         </Card>
       )}

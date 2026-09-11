@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
-import { ITEM_SIZES } from "@/lib/uniform-items"
+import { useState, useRef } from "react"
+import { useReference } from "@/lib/reference"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
@@ -27,9 +27,16 @@ export function SizeCombobox({
   onKeyDown,
 }: SizeComboboxProps) {
   const [open, setOpen] = useState(false)
+  // Close the list when the item type changes ("adjust state during render").
+  const [prevItemType, setPrevItemType] = useState(itemType)
+  if (itemType !== prevItemType) {
+    setPrevItemType(itemType)
+    setOpen(false)
+  }
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const suggestions = ITEM_SIZES[itemType] ?? []
+  const { sizes } = useReference()
+  const suggestions = sizes[itemType] ?? []
   const filtered = value.trim()
     ? suggestions.filter((s) => s.toLowerCase().includes(value.trim().toLowerCase()))
     : suggestions
@@ -44,14 +51,15 @@ export function SizeCombobox({
     setOpen(false)
   }
 
-  useEffect(() => { setOpen(false) }, [itemType])
-
   return (
     <div ref={containerRef} className={cn("relative", className)} onBlur={handleBlur}>
       <Input
         id={id}
         value={value}
-        onChange={(e) => { onChange(e.target.value); setOpen(true) }}
+        onChange={(e) => {
+          onChange(e.target.value)
+          setOpen(true)
+        }}
         onFocus={() => setOpen(true)}
         placeholder={placeholder}
         disabled={disabled}
@@ -62,12 +70,12 @@ export function SizeCombobox({
         }}
       />
       {open && filtered.length > 0 && !disabled && (
-        <div className="absolute z-50 mt-1 max-h-52 w-full overflow-auto rounded-md border bg-popover text-popover-foreground shadow-md">
+        <div className="bg-popover text-popover-foreground absolute z-50 mt-1 max-h-52 w-full overflow-auto rounded-md border shadow-md">
           {filtered.map((size) => (
             <button
               key={size}
               type="button"
-              className="w-full px-3 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+              className="hover:bg-accent hover:text-accent-foreground w-full px-3 py-1.5 text-left text-sm"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => handleSelect(size)}
             >
