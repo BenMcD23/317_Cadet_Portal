@@ -1,5 +1,13 @@
 import type { LucideIcon } from "lucide-react"
-import { Award, ClipboardList, FileText, LayoutDashboard, Shirt, UserRound } from "lucide-react"
+import {
+  Award,
+  ClipboardCheck,
+  ClipboardList,
+  FileText,
+  LayoutDashboard,
+  Shirt,
+  UserRound,
+} from "lucide-react"
 
 /** The site map behind the sidebar and the header title. */
 export type NavLink = { label: string; href: string; icon: LucideIcon }
@@ -19,6 +27,7 @@ export const NAV_SECTIONS: NavSection[] = [
     label: "Me",
     links: [
       { label: "My Details", href: "/my-details", icon: UserRound },
+      { label: "My Inspections", href: "/my-inspections", icon: ClipboardCheck },
       { label: "Documents", href: "/documents", icon: FileText },
     ],
   },
