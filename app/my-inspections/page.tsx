@@ -9,7 +9,8 @@ import { PageHeader } from "@/components/page-header"
 import { ErrorAlert } from "@/components/error-alert"
 import { SectionHeading } from "@/components/section-heading"
 import { formatDate } from "@/lib/format"
-import { ClipboardCheck, TriangleAlert, ThumbsUp, UserX, CalendarDays } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { ClipboardCheck, UserX, CalendarDays } from "lucide-react"
 
 // One note left on a cadet during an inspection — where on the uniform it was
 // and what the inspector wrote.
@@ -44,6 +45,87 @@ function uniformLabel(uniform: string): string {
   return UNIFORM_LABELS[uniform] ?? uniform
 }
 
+// Same figures the inspecting staff mark up on the inspection sheet, so a cadet
+// reads their faults in the place they were put.
+const UNIFORM_FIGURES: Record<string, string> = {
+  blues: "/inspection-figure.png",
+  mtp: "/inspection-figure-mtp.png",
+}
+
+// Bands down the figure, as percentages of its height. Positions are the same
+// for either uniform; only the shirt/footwear labels differ.
+type Band = { top: number; height: number }
+const REGIONS_BY_UNIFORM: Record<string, Record<string, Band>> = {
+  blues: {
+    "Beret / Headdress": { top: 0, height: 14 },
+    "Hair / Face": { top: 14, height: 6 },
+    "Jumper / Shirt / Tie": { top: 20, height: 27 },
+    Trousers: { top: 47, height: 42 },
+    Shoes: { top: 89, height: 11 },
+  },
+  mtp: {
+    "Beret / Headdress": { top: 0, height: 14 },
+    "Hair / Face": { top: 14, height: 6 },
+    "Undershirt / Overshirt": { top: 20, height: 27 },
+    Trousers: { top: 47, height: 42 },
+    Boots: { top: 89, height: 11 },
+  },
+}
+
+type NumberedNote = { n: number; type: "fault" | "positive"; region: string | null; text: string | null }
+
+function numberNotes(faults: Note[], positives: Note[]): NumberedNote[] {
+  let n = 1
+  return [
+    ...faults.map((f) => ({ n: n++, type: "fault" as const, region: f.region, text: f.text })),
+    ...positives.map((p) => ({ n: n++, type: "positive" as const, region: p.region, text: p.text })),
+  ]
+}
+
+/** The uniform figure with a numbered marker sat on each noted region. */
+function InspectionFigure({ notes, uniform }: { notes: NumberedNote[]; uniform: string }) {
+  const regions = REGIONS_BY_UNIFORM[uniform] ?? REGIONS_BY_UNIFORM.blues
+  const figureSrc = UNIFORM_FIGURES[uniform] ?? UNIFORM_FIGURES.blues
+
+  // Notes with no region, or one this uniform doesn't know, fall to the torso.
+  const fallback = uniform === "mtp" ? "Undershirt / Overshirt" : "Jumper / Shirt / Tie"
+  const byRegion = new Map<string, NumberedNote[]>()
+  for (const note of notes) {
+    const r = note.region && regions[note.region] ? note.region : fallback
+    if (!byRegion.has(r)) byRegion.set(r, [])
+    byRegion.get(r)!.push(note)
+  }
+
+  return (
+    <div className="relative w-[90px] shrink-0 select-none" style={{ aspectRatio: "512 / 1536" }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={figureSrc}
+        alt={`Cadet in ${uniformLabel(uniform)}`}
+        className="h-full w-full object-contain dark:opacity-90 dark:invert"
+        draggable={false}
+      />
+      {[...byRegion.entries()].map(([region, items]) =>
+        items.map((note, j) => (
+          <span
+            key={note.n}
+            className={cn(
+              "ring-background absolute left-1/2 flex size-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-[9px] font-bold text-white ring-2",
+              note.type === "fault" ? "bg-destructive" : "bg-success"
+            )}
+            style={{
+              top: `${regions[region].top + (regions[region].height * (j + 1)) / (items.length + 1)}%`,
+            }}
+            title={note.text ?? undefined}
+          >
+            {note.n}
+          </span>
+        ))
+      )}
+    </div>
+  )
+}
+
 /** One headline number with its label — the row above the timeline. */
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
@@ -57,31 +139,26 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
   )
 }
 
-function NoteList({ notes, kind }: { notes: Note[]; kind: "fault" | "positive" }) {
-  const fault = kind === "fault"
-  const Icon = fault ? TriangleAlert : ThumbsUp
+function NumberedNotes({ notes }: { notes: NumberedNote[] }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <p className="text-muted-foreground text-xs font-medium">{fault ? "Faults" : "Done well"}</p>
-      <ul className="flex flex-col gap-1.5">
-        {notes.map((note, i) => (
-          <li
-            key={i}
-            className={
-              fault
-                ? "border-destructive/30 bg-destructive/5 flex items-start gap-2 rounded-md border px-2.5 py-1.5"
-                : "border-success/30 bg-success/5 flex items-start gap-2 rounded-md border px-2.5 py-1.5"
-            }
+    <ul className="flex flex-col gap-1.5">
+      {notes.map((note) => (
+        <li key={note.n} className="flex items-start gap-2 text-xs">
+          <span
+            className={cn(
+              "mt-px flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white",
+              note.type === "fault" ? "bg-destructive" : "bg-success"
+            )}
           >
-            <Icon className={`mt-0.5 size-3.5 shrink-0 ${fault ? "text-destructive" : "text-success"}`} />
-            <div className="min-w-0 text-xs">
-              {note.region && <span className="font-medium">{note.region}: </span>}
-              <span className="text-muted-foreground">{note.text || "No detail given"}</span>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
+            {note.n}
+          </span>
+          <span className="min-w-0 flex-1 break-words">
+            {note.region && <span className="font-medium">{note.region}: </span>}
+            <span className="text-muted-foreground">{note.text || "No detail given"}</span>
+          </span>
+        </li>
+      ))}
+    </ul>
   )
 }
 
@@ -173,61 +250,65 @@ export default function MyInspectionsPage() {
               description={`${history.inspection_count} night${history.inspection_count !== 1 ? "s" : ""} on record, newest first`}
             />
 
-            {timeline.map((entry) => (
-              <Card key={entry.date} className="gap-0 py-0">
-                <CardHeader className="border-b py-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <CalendarDays className="text-muted-foreground size-4" />
-                      {formatDate(entry.date)}
-                    </CardTitle>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <Badge variant="outline" className="text-xs">
-                        {uniformLabel(entry.uniform)}
-                      </Badge>
-                      {entry.absent ? (
-                        <Badge
-                          variant="outline"
-                          className={
-                            entry.awol
-                              ? "border-destructive/40 bg-destructive/10 text-destructive text-xs"
-                              : "text-xs"
-                          }
-                        >
-                          <UserX />
-                          {entry.awol ? "AWOL" : "Absent"}
+            {timeline.map((entry) => {
+              const notes = numberNotes(entry.faults, entry.positives)
+              return (
+                <Card key={entry.date} className="gap-0 py-0">
+                  <CardHeader className="border-b py-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <CalendarDays className="text-muted-foreground size-4" />
+                        {formatDate(entry.date)}
+                      </CardTitle>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          {uniformLabel(entry.uniform)}
                         </Badge>
-                      ) : (
-                        <Badge variant="secondary" className="text-xs tabular-nums">
-                          {entry.score === null ? "Not scored" : `${entry.score}/10`}
-                        </Badge>
-                      )}
+                        {entry.absent ? (
+                          <Badge
+                            variant="outline"
+                            className={
+                              entry.awol
+                                ? "border-destructive/40 bg-destructive/10 text-destructive text-xs"
+                                : "text-xs"
+                            }
+                          >
+                            <UserX />
+                            {entry.awol ? "AWOL" : "Absent"}
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-xs tabular-nums">
+                            {entry.score === null ? "Not scored" : `${entry.score}/10`}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </CardHeader>
+                  </CardHeader>
 
-                <CardContent className="flex flex-col gap-3 py-4">
-                  {entry.absent && (
-                    <p className="text-muted-foreground text-sm">
-                      {entry.awol
-                        ? "Marked absent with no absence logged on SMS."
-                        : "Marked absent — an absence was logged for this date."}
-                    </p>
-                  )}
-                  {entry.faults.length > 0 && <NoteList notes={entry.faults} kind="fault" />}
-                  {entry.positives.length > 0 && <NoteList notes={entry.positives} kind="positive" />}
-                  {!entry.absent && entry.faults.length === 0 && entry.positives.length === 0 && (
-                    <p className="text-muted-foreground text-sm">No notes left on this inspection.</p>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+                  <CardContent className="py-4">
+                    {entry.absent ? (
+                      <p className="text-muted-foreground text-sm">
+                        {entry.awol
+                          ? "Marked absent with no absence logged on SMS."
+                          : "Marked absent — an absence was logged for this date."}
+                      </p>
+                    ) : (
+                      <div className="flex gap-4">
+                        <InspectionFigure notes={notes} uniform={entry.uniform} />
+                        <div className="min-w-0 flex-1">
+                          {notes.length === 0 ? (
+                            <p className="text-muted-foreground text-sm">No notes left on this inspection.</p>
+                          ) : (
+                            <NumberedNotes notes={notes} />
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )
+            })}
           </section>
-
-          <p className="text-muted-foreground text-xs">
-            Only your own inspections are shown — scores and notes for other cadets aren&apos;t available
-            here. Speak to staff if something looks wrong.
-          </p>
         </>
       )}
     </div>
