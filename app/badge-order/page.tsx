@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { ChevronDown, ChevronUp, Plus, X } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
+import { AlertTriangle, ChevronDown, ChevronUp, Plus, X } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -12,7 +13,9 @@ import { Label } from "@/components/ui/label"
 import { Spinner } from "@/components/ui/spinner"
 import { PageHeader } from "@/components/page-header"
 import { ErrorAlert } from "@/components/error-alert"
+import { BadgeQualNotice } from "@/components/badge-qual-notice"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { type BadgeQualChecks, needsQualConfirmation } from "@/lib/badge-quals"
 import {
   type BadgeCategory,
   type GainedWhereOption,
@@ -262,17 +265,40 @@ export default function BadgeOrderPage() {
   const [level, setLevel] = useState<string | null>(null)
   const [replacement, setReplacement] = useState(false)
   const [gainedWhere, setGainedWhere] = useState<GainedWhereState>(emptyGainedWhere())
+  // Ticked when the cadet says they hold a badge SMS has no record of yet.
+  const [qualConfirmed, setQualConfirmed] = useState(false)
 
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // What SMS says the cadet actually holds, for every badge in the catalogue at
+  // once so picking a badge shows its verdict without another request. A failed
+  // fetch leaves it undefined, which reads as "couldn't check" everywhere below
+  // — the form keeps working exactly as it did before the check existed.
+  const { data: qualChecks } = useQuery<BadgeQualChecks>({
+    queryKey: ["badge-qual-check"],
+    queryFn: async () => {
+      const res = await fetch("/api/cadet/badge-qual-check")
+      if (!res.ok) throw new Error("Could not check qualifications")
+      return res.json()
+    },
+    staleTime: 5 * 60 * 1000,
+  })
 
   const currentBadgeName = category ? buildBadgeName(category, subType, level) : null
   const gainedWhereApplies = needsGainedWhere(categoriesWithoutGainedWhere, category?.id, replacement)
   const replacementCount = badges.filter((b) => b.replacement).length
 
+  const currentQualCheck = currentBadgeName ? qualChecks?.[currentBadgeName] : undefined
+  // SMS trails reality by days, so an unevidenced badge is a confirmation to
+  // ask for, not an order to refuse.
+  const needsQualConfirmed = needsQualConfirmation(currentQualCheck)
+  const unevidencedCount = badges.filter((b) => needsQualConfirmation(qualChecks?.[b.badgeName])).length
+
   function handleAddBadge() {
     if (!currentBadgeName) return
     if (gainedWhereApplies && !isGainedWhereComplete(gainedWhere)) return
+    if (needsQualConfirmed && !qualConfirmed) return
     setBadges((prev) => [
       ...prev,
       {
@@ -289,6 +315,7 @@ export default function BadgeOrderPage() {
     setLevel(null)
     setReplacement(false)
     setGainedWhere(emptyGainedWhere())
+    setQualConfirmed(false)
   }
 
   function handleRemoveBadge(idx: number) {
@@ -361,6 +388,15 @@ export default function BadgeOrderPage() {
                       <span className="min-w-0 flex-1">
                         <span className="flex flex-wrap items-center gap-2">
                           {badge.badgeName}
+                          {needsQualConfirmation(qualChecks?.[badge.badgeName]) && (
+                            <Badge
+                              variant="outline"
+                              className="border-amber-500/50 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+                            >
+                              <AlertTriangle className="mr-1 h-3 w-3" />
+                              Not on SMS
+                            </Badge>
+                          )}
                           {badge.replacement && (
                             <Badge
                               variant="outline"
@@ -399,12 +435,17 @@ export default function BadgeOrderPage() {
                     setCategory(c)
                     setSubType(null)
                     setLevel(null)
+                    setQualConfirmed(false)
                   }}
                   onSubType={(s) => {
                     setSubType(s)
                     setLevel(null)
+                    setQualConfirmed(false)
                   }}
-                  onLevel={setLevel}
+                  onLevel={(l) => {
+                    setLevel(l)
+                    setQualConfirmed(false)
+                  }}
                 />
                 {currentBadgeName &&
                   (() => {
@@ -419,6 +460,22 @@ export default function BadgeOrderPage() {
                       </div>
                     )
                   })()}
+                {currentBadgeName && <BadgeQualNotice check={currentQualCheck} />}
+                {currentBadgeName && needsQualConfirmed && (
+                  <label className="flex cursor-pointer items-start gap-2 text-sm">
+                    <Checkbox
+                      checked={qualConfirmed}
+                      onCheckedChange={(v) => setQualConfirmed(v === true)}
+                      className="mt-0.5"
+                    />
+                    <span>
+                      I have been awarded this
+                      <span className="text-muted-foreground block text-xs">
+                        Order it anyway — stores will check before the badge is issued
+                      </span>
+                    </span>
+                  </label>
+                )}
                 {currentBadgeName && (
                   <label className="flex cursor-pointer items-start gap-2 text-sm">
                     <Checkbox
@@ -439,7 +496,11 @@ export default function BadgeOrderPage() {
                   type="button"
                   size="sm"
                   variant="outline"
-                  disabled={!currentBadgeName || (gainedWhereApplies && !isGainedWhereComplete(gainedWhere))}
+                  disabled={
+                    !currentBadgeName ||
+                    (gainedWhereApplies && !isGainedWhereComplete(gainedWhere)) ||
+                    (needsQualConfirmed && !qualConfirmed)
+                  }
                   onClick={handleAddBadge}
                 >
                   <Plus className="mr-1.5 h-3.5 w-3.5" />
@@ -451,6 +512,14 @@ export default function BadgeOrderPage() {
         </Card>
 
         <ErrorAlert message={error} title="Could not submit order" />
+
+        {unevidencedCount > 0 && (
+          <p className="rounded-md border border-amber-500/40 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+            {unevidencedCount === 1 ? "One badge is" : `${unevidencedCount} badges are`} not backed up by your
+            SMS record. Stores will check before issuing — if a qualification is missing from SMS, speak to a
+            member of staff about getting it added.
+          </p>
+        )}
 
         {replacementCount > 0 && (
           <p className="rounded-md border border-amber-500/40 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
