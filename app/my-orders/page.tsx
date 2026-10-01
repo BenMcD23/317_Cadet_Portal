@@ -280,7 +280,7 @@ function SizingEditor({
         ))}
       </div>
 
-      {mode === "known" && <SizeCombobox itemType={itemType} value={size} onChange={setSize} />}
+      {mode === "known" && <SizeCombobox strict itemType={itemType} value={size} onChange={setSize} />}
 
       {mode === "needs-sizing" && (
         <div className="space-y-3">
@@ -302,6 +302,7 @@ function SizingEditor({
             </div>
             {!unknownSize && (
               <SizeCombobox
+                strict
                 itemType={itemType}
                 value={currentSize}
                 onChange={setCurrentSize}
