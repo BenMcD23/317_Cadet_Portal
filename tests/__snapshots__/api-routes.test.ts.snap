@@ -1,0 +1,24 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`app/api route handlers > matches the pinned list of backend routes 1`] = `
+[
+  "GET /api/cadet/badge-orders -> /cadets/me/badge-orders",
+  "POST /api/cadet/badge-orders -> /cadets/me/badge-orders",
+  "PATCH /api/cadet/badge-orders/[id] -> /cadets/me/badge-orders/:id",
+  "DELETE /api/cadet/badge-orders/[id] -> /cadets/me/badge-orders/:id",
+  "GET /api/cadet/inspections -> /cadets/me/inspections",
+  "GET /api/cadet/issuances -> /cadets/me/issuances",
+  "GET /api/cadet/me -> /cadets/me",
+  "GET /api/cadet/orders -> /cadets/me/orders",
+  "POST /api/cadet/orders -> /cadets/me/orders",
+  "PATCH /api/cadet/orders/[id] -> /cadets/me/orders/:id",
+  "DELETE /api/cadet/orders/[id] -> /cadets/me/orders/:id",
+  "PATCH /api/cadet/phone-number -> /cadets/me/phone-number",
+  "GET /api/reference -> /reference",
+  "GET /api/user/issuances -> /users/me/issuances",
+  "GET /api/user/orders -> /users/me/orders",
+  "POST /api/user/orders -> /users/me/orders",
+  "PATCH /api/user/orders/[id] -> /users/me/orders/:id",
+  "DELETE /api/user/orders/[id] -> /users/me/orders/:id",
+]
+`;

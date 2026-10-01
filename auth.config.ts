@@ -41,8 +41,8 @@ export const authConfig: NextAuthConfig = {
         return Response.redirect(signOutUrl)
       }
 
-      const email = auth.user?.email ?? ""
-      if (!email.endsWith(`@${ALLOWED_DOMAIN}`)) {
+      const email = (auth.user?.email ?? "").toLowerCase()
+      if (!email.endsWith(`@${ALLOWED_DOMAIN.toLowerCase()}`)) {
         return Response.redirect(new URL("/unauthorized", nextUrl))
       }
 
