@@ -276,7 +276,12 @@ function ItemSizingCard({
 
       {/* Known size */}
       {entry.mode === "known" && (
-        <SizeCombobox itemType={entry.itemType} value={entry.size} onChange={(v) => onChange({ size: v })} />
+        <SizeCombobox
+          strict
+          itemType={entry.itemType}
+          value={entry.size}
+          onChange={(v) => onChange({ size: v })}
+        />
       )}
 
       {/* Needs sizing */}
@@ -299,6 +304,7 @@ function ItemSizingCard({
             </div>
             {!entry.sizing.currentSizeUnknown && (
               <SizeCombobox
+                strict
                 itemType={entry.itemType}
                 value={entry.sizing.currentSize}
                 onChange={(v) => patchSizing({ currentSize: v })}
