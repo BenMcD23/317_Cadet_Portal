@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 317 Cadet Portal
 
-## Getting Started
+Cadet-facing web app for 317 (Failsworth) Squadron RAFAC: order uniform and
+badges, track orders, see what has been issued, keep a mobile number on file.
+Next.js (App Router) + TypeScript + shadcn/ui, talking to the
+[SMS Scrapers API](https://github.com/BenMcD23/SMS_Scrapers_API) through its
+own server routes (the browser never calls the API directly).
 
-First, run the development server:
+The staff app is [317 SMS](https://github.com/BenMcD23/317_SMS_Site).
+
+## Running locally
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.local.tmpl .env.local   # Google OAuth client + API base
+npm install
+npm run dev                     # http://localhost:3001
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The API must be running too. To test as a cadet, insert a cadet row whose
+email matches your Google account (see the API README, "Seeding a test cadet").
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Checks
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run check         # lint + typecheck — run before committing
+npm run build
+npm run format
+```
 
-## Learn More
+CI runs all three on every push and pull request.
 
-To learn more about Next.js, take a look at the following resources:
+## How it fits together
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Auth** — Google sign-in restricted to the squadron Workspace domain
+  (`lib/config.ts`). The session carries a Google `id_token`; `auth.ts`
+  renews it from the refresh token.
+- **Server routes** — everything under `app/api/**` is a one-line wrapper
+  over `lib/api-proxy.ts`, which adds the token and turns an unreachable API
+  into a 503 the outage overlay understands.
+- **Reference data** — item types, sizes, sizing fields and the badge
+  catalogue come from the API's `/reference` via `lib/reference.ts`. The SMS
+  site reads the same endpoint, so the two never disagree.
+- **Navigation** — `lib/navigation.ts`; layout in `components/layout/*`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deployment
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Vercel, from `main` (production) and `development` (preview).
