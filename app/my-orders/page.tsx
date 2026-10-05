@@ -280,7 +280,7 @@ function SizingEditor({
         ))}
       </div>
 
-      {mode === "known" && <SizeCombobox itemType={itemType} value={size} onChange={setSize} />}
+      {mode === "known" && <SizeCombobox strict itemType={itemType} value={size} onChange={setSize} />}
 
       {mode === "needs-sizing" && (
         <div className="space-y-3">
@@ -302,6 +302,7 @@ function SizingEditor({
             </div>
             {!unknownSize && (
               <SizeCombobox
+                strict
                 itemType={itemType}
                 value={currentSize}
                 onChange={setCurrentSize}
@@ -780,6 +781,10 @@ export default function MyOrdersPage() {
     setError(null)
     try {
       const meRes = await fetch("/api/cadet/me")
+      // 404 is the only answer that means "not a cadet". Anything else (the
+      // API being down, say) must not quietly swap a cadet onto the adult
+      // order list and show them nothing.
+      if (!meRes.ok && meRes.status !== 404) throw new Error("Failed to load your orders")
       const isCadet = meRes.ok
       const uniformEndpoint = isCadet ? "/api/cadet/orders" : "/api/user/orders"
       const [uRes, bRes] = await Promise.all([
