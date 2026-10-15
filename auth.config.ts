@@ -1,7 +1,24 @@
 import type { NextAuthConfig } from "next-auth"
 import Google from "next-auth/providers/google"
+import Credentials from "next-auth/providers/credentials"
 
 import { ALLOWED_DOMAIN } from "@/lib/config"
+
+/** Accounts the dev sign-in can use. Must match the API's `_dev_fake_email`
+ *  so the fake token resolves to the same account there: the SNCO and NCO are
+ *  cadets in the dev seed (they have a /cadets/me record), staff is an adult. */
+export const DEV_USERS = {
+  snco: { email: "dev.snco@317atc.co.uk", name: "Dev SNCO" },
+  nco: { email: "dev.nco@317atc.co.uk", name: "Dev NCO" },
+  staff: { email: "ci.mcdonald@317atc.co.uk", name: "Dev Staff" },
+} as const
+
+export type DevRole = keyof typeof DEV_USERS
+
+/** Dev sign-in needs the flag AND a non-production build, so a stray env var
+ *  on a deployed build can't switch it on. */
+export const devBypassEnabled = () =>
+  process.env.AUTH_DEV_BYPASS === "1" && process.env.NODE_ENV !== "production"
 
 export const authConfig: NextAuthConfig = {
   providers: [
@@ -16,6 +33,19 @@ export const authConfig: NextAuthConfig = {
         },
       },
     }),
+    // Local preview only: the API accepts the matching dev-fake-token solely
+    // when its own DEV_FAKE_AUTH=1 is set.
+    ...(devBypassEnabled()
+      ? [
+          Credentials({
+            credentials: { role: {} },
+            authorize: (c) => {
+              const role = String(c?.role ?? "snco")
+              return { id: role, ...(DEV_USERS[role as DevRole] ?? DEV_USERS.snco) }
+            },
+          }),
+        ]
+      : []),
   ],
   pages: {
     signIn: "/login",

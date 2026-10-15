@@ -95,6 +95,27 @@ function Login() {
           <p className="text-muted-foreground text-center text-xs lg:text-left">
             Access is restricted to @317atc.co.uk accounts.
           </p>
+
+          {/* Dev sign-in: the buttons only appear outside production, and the
+              provider behind them only exists when AUTH_DEV_BYPASS=1. */}
+          {process.env.NODE_ENV !== "production" && (
+            <div className="flex flex-col gap-2 border-t pt-6">
+              <p className="text-muted-foreground text-xs">Dev sign-in</p>
+              <div className="flex gap-2">
+                {(["snco", "nco", "staff"] as const).map((role) => (
+                  <Button
+                    key={role}
+                    variant="secondary"
+                    size="sm"
+                    className="flex-1 uppercase"
+                    onClick={() => signIn("credentials", { role, redirectTo: callback })}
+                  >
+                    {role}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

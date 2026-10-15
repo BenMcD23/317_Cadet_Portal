@@ -362,10 +362,7 @@ export default function BadgeOrderPage() {
                         <span className="flex flex-wrap items-center gap-2">
                           {badge.badgeName}
                           {badge.replacement && (
-                            <Badge
-                              variant="outline"
-                              className="border-amber-500/50 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
-                            >
+                            <Badge variant="outline" className="border-warning/40 bg-warning/10 text-warning">
                               Replacement — £2 fee
                             </Badge>
                           )}
@@ -453,7 +450,7 @@ export default function BadgeOrderPage() {
         <ErrorAlert message={error} title="Could not submit order" />
 
         {replacementCount > 0 && (
-          <p className="rounded-md border border-amber-500/40 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+          <p className="border-warning/40 bg-warning/10 rounded-md border px-3 py-2 text-sm">
             Replacement badges cost £2 each — please bring £{replacementCount * 2} to stores when collecting.
           </p>
         )}

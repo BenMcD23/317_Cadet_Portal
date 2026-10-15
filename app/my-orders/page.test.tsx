@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { render, screen, waitFor } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("@/lib/reference", async (importOriginal) => ({
@@ -73,5 +74,47 @@ describe("My Orders", () => {
     renderPage()
     expect(await screen.findByText("Failed to load your orders")).toBeInTheDocument()
     expect(requested).not.toContain("/api/user/orders")
+  })
+
+  // What a cadet comes here to find out, without opening every order.
+  it("shows what's in each order and where it's up to before it's opened", async () => {
+    const item = (id: string, itemType: string, over = {}) => ({
+      id,
+      itemType,
+      size: "M",
+      needSizing: false,
+      sizingDetails: "",
+      qmNotes: [],
+      givenAt: null,
+      givenBy: null,
+      readyToCollect: null,
+      ...over,
+    })
+    const order = {
+      id: "o1",
+      cadetName: "Cara Cadet",
+      cadetCin: 1,
+      timestamp: "2026-10-01T18:00:00",
+      completed: false,
+      items: [
+        item("i1", "Beret", { readyToCollect: "2026-10-10T19:00:00" }),
+        item("i2", "Belt", {
+          readyToCollect: "2026-10-10T19:00:00",
+        }),
+      ],
+    }
+    answers = {
+      "/api/cadet/me": () => new Response(JSON.stringify({ cin: 1 })),
+      "/api/cadet/orders": () => new Response(JSON.stringify([order])),
+    }
+    renderPage()
+
+    expect(await screen.findByText("Beret and Belt")).toBeInTheDocument()
+    expect(screen.getByText("Ready to collect")).toBeInTheDocument()
+    const toggle = screen.getByRole("button", { name: /^Expand uniform order from/ })
+    expect(toggle).toHaveAttribute("aria-expanded", "false")
+
+    await userEvent.click(toggle)
+    expect(toggle).toHaveAttribute("aria-expanded", "true")
   })
 })

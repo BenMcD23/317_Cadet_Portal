@@ -3,31 +3,32 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { PageHeader } from "@/components/page-header"
+import { SectionHeading } from "@/components/section-heading"
+import { ActionList, type ActionLink } from "@/components/action-list"
 import { useReference } from "@/lib/reference"
 import { formatDate } from "@/lib/format"
-import { Shirt, Award, ClipboardList, ArrowRight, MessageSquare } from "lucide-react"
+import { Shirt, Award, ClipboardList, ChevronRight, MessageSquare } from "lucide-react"
 
-const QUICK_LINKS = [
+const QUICK_LINKS: ActionLink[] = [
   {
     href: "/uniform-order",
     icon: Shirt,
-    title: "Uniform Order",
-    desc: "Request new uniform items or replacements.",
+    title: "Order Uniform",
+    desc: "New items, or a bigger size when something no longer fits.",
   },
   {
     href: "/badge-order",
     icon: Award,
-    title: "Badge Order",
-    desc: "Order proficiency badges you have qualified for.",
+    title: "Order Badges",
+    desc: "Proficiency badges you've qualified for.",
   },
   {
     href: "/my-orders",
     icon: ClipboardList,
     title: "My Orders",
-    desc: "View and manage your submitted orders.",
+    desc: "See where your orders are up to and when they're ready.",
   },
 ]
 
@@ -87,81 +88,57 @@ export default function HomePage() {
   const firstName = session?.user?.name?.split(" ")[0]
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 pb-16">
       <PageHeader
         title={firstName ? `Hello, ${firstName}` : "Dashboard"}
         description="Order uniform and badges, and see what you've been issued"
       />
 
       {needsPhone && (
-        <Link href="/my-details" className="group">
-          <Card className="border-primary/40 group-hover:border-primary gap-2 py-4 transition-colors">
-            <CardContent className="flex items-center gap-3">
-              <MessageSquare className="text-muted-foreground size-4 shrink-0" />
-              <div className="flex flex-col gap-0.5">
-                <p className="text-sm font-medium">Add your mobile number</p>
-                <p className="text-muted-foreground text-xs">
-                  You&apos;re not getting the parade night texts yet — add a number in My Details.
-                </p>
-              </div>
-              <ArrowRight className="text-muted-foreground ml-auto size-3.5 shrink-0 transition-transform group-hover:translate-x-0.5" />
-            </CardContent>
-          </Card>
+        <Link
+          href="/my-details"
+          className="group border-primary/40 bg-primary/5 hover:border-primary focus-visible:ring-ring/50 flex items-center gap-3 rounded-lg border px-4 py-3 outline-none focus-visible:ring-2"
+        >
+          <MessageSquare className="text-primary size-5 shrink-0" aria-hidden />
+          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="text-sm font-medium">Add your mobile number</span>
+            <span className="text-muted-foreground text-xs text-pretty">
+              You&apos;re not getting the parade night texts yet. Add a number in My Details.
+            </span>
+          </span>
+          <ChevronRight className="text-muted-foreground size-4 shrink-0" aria-hidden />
         </Link>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        {QUICK_LINKS.map(({ href, icon: Icon, title, desc }) => (
-          <Link key={href} href={href} className="group">
-            <Card className="group-hover:border-primary/40 h-full gap-2 py-5 transition-colors">
-              <CardHeader className="pb-0">
-                <div className="flex items-center justify-between">
-                  <Icon className="text-muted-foreground size-4" />
-                  <ArrowRight className="text-muted-foreground/0 group-hover:text-muted-foreground size-3.5 transition-all group-hover:translate-x-0.5" />
-                </div>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-0.5">
-                <p className="text-sm font-medium">{title}</p>
-                <p className="text-muted-foreground text-xs">{desc}</p>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
-      </div>
+      <ActionList links={QUICK_LINKS} />
 
       {loading && <Skeleton className="h-72" />}
 
       {!loading && issuances !== null && (
-        <Card className="gap-0 overflow-hidden py-0">
-          <CardHeader className="border-b py-4">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Shirt className="text-muted-foreground size-4" />
-              Uniform issued to you
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="divide-y">
-              {issuanceCategories.map((category) => {
-                const record = issuances.find((i) => i.itemCategory === category)
-                return (
-                  <div key={category} className="flex items-center justify-between gap-4 px-6 py-3">
-                    <span className="text-sm font-medium">{category}</span>
-                    {record ? (
-                      <div className="text-right">
-                        <p className="text-muted-foreground text-sm">{formatDate(record.lastGiven)}</p>
-                        {record.sizeGiven && (
-                          <p className="text-muted-foreground text-xs">Size: {record.sizeGiven}</p>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground text-xs">Not issued</span>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          </CardContent>
-        </Card>
+        <section className="flex flex-col gap-3">
+          <SectionHeading
+            title={<span id="issued-heading">Uniform issued to you</span>}
+            description="The last size you were given of each item, so you know what to order."
+          />
+          <ul aria-labelledby="issued-heading" className="bg-card divide-y overflow-hidden rounded-lg border">
+            {issuanceCategories.map((category) => {
+              const record = issuances.find((i) => i.itemCategory === category)
+              return (
+                <li key={category} className="flex items-baseline justify-between gap-4 px-4 py-3">
+                  <span className="text-sm">{category}</span>
+                  {record ? (
+                    <span className="flex flex-col items-end gap-0.5 text-right">
+                      <span className="text-sm font-medium">{record.sizeGiven ?? "Issued"}</span>
+                      <span className="text-muted-foreground text-xs">{formatDate(record.lastGiven)}</span>
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground text-xs">Not issued</span>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        </section>
       )}
     </div>
   )

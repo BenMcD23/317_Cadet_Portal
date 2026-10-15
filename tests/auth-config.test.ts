@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { authConfig } from "@/auth.config"
+import { authConfig, DEV_USERS, devBypassEnabled } from "@/auth.config"
 
 type Authorized = (args: { auth: unknown; request: { nextUrl: URL } }) => boolean | Response
 const authorized = authConfig.callbacks!.authorized as unknown as Authorized
@@ -49,5 +49,33 @@ describe("middleware authorized()", () => {
       authConfig.providers[0] as unknown as { options: { authorization: { params: Record<string, string> } } }
     ).options.authorization.params
     expect(params).toMatchObject({ access_type: "offline", prompt: "consent" })
+  })
+})
+
+describe("dev sign-in", () => {
+  afterEach(() => vi.unstubAllEnvs())
+
+  it("is off unless asked for", () => {
+    vi.stubEnv("AUTH_DEV_BYPASS", "")
+    expect(devBypassEnabled()).toBe(false)
+  })
+
+  it("is on with the flag outside production", () => {
+    vi.stubEnv("AUTH_DEV_BYPASS", "1")
+    vi.stubEnv("NODE_ENV", "development")
+    expect(devBypassEnabled()).toBe(true)
+  })
+
+  // A stray env var on a deployed build must not hand out fake sessions.
+  it("stays off in production even with the flag set", () => {
+    vi.stubEnv("AUTH_DEV_BYPASS", "1")
+    vi.stubEnv("NODE_ENV", "production")
+    expect(devBypassEnabled()).toBe(false)
+  })
+
+  it("signs in as accounts the API's dev seed knows, all inside the allowed domain", () => {
+    expect(DEV_USERS.snco.email).toBe("dev.snco@317atc.co.uk")
+    expect(DEV_USERS.nco.email).toBe("dev.nco@317atc.co.uk")
+    for (const u of Object.values(DEV_USERS)) expect(u.email.endsWith("@317atc.co.uk")).toBe(true)
   })
 })

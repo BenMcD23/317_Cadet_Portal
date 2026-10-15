@@ -2,20 +2,19 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
+import { OrderDisclosure, OrderList } from "@/components/order-disclosure"
+import { OrderStatusBadge } from "@/components/order-status-badge"
+import { itemSummary, orderStatus } from "@/lib/order-status"
 import { EmptyState } from "@/components/empty-state"
 import { PageHeader } from "@/components/page-header"
 import { ErrorAlert } from "@/components/error-alert"
 import { SizeCombobox } from "@/components/size-combobox"
 import { cn } from "@/lib/utils"
 import {
-  ChevronDown,
-  ChevronUp,
   Plus,
   Trash2,
   PackageCheck,
@@ -36,13 +35,13 @@ import {
   useReference,
 } from "@/lib/reference"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/responsive-dialog"
 import { SectionHeading } from "@/components/section-heading"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -63,6 +62,8 @@ interface OrderItem {
   qmNotes: QmNote[]
   givenAt: string | null
   givenBy: string | null
+  /** When the stores told the cadet it's ready; null until then. */
+  readyToCollect?: string | null
 }
 
 interface Order {
@@ -81,6 +82,7 @@ interface BadgeItem {
   qmNotes: QmNote[]
   givenAt: string | null
   givenBy: string | null
+  readyToCollect?: string | null
   gainedWhere?: string | null
   gainedWhereDetail?: string | null
   gainedDateFrom?: string | null
@@ -1067,309 +1069,140 @@ export default function MyOrdersPage() {
       {allActive.length > 0 && (
         <section className="space-y-3">
           <SectionHeading title="Active" />
-          {allActive.map((entry) => {
-            const expanded = expandedIds.has(entry.key)
+          <OrderList>
+            {allActive.map((entry) => {
+              const expanded = expandedIds.has(entry.key)
 
-            if (entry.kind === "uniform") {
-              const order = entry.order
-              const noneGiven = order.items.every((i) => !i.givenAt)
-              const existingTypes = new Set(order.items.map((i) => i.itemType))
-              const isSaving = savingId === order.id
+              if (entry.kind === "uniform") {
+                const order = entry.order
+                const noneGiven = order.items.every((i) => !i.givenAt)
+                const existingTypes = new Set(order.items.map((i) => i.itemType))
+                const isSaving = savingId === order.id
 
-              return (
-                <Card key={entry.key}>
-                  <CardHeader className="pb-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex min-w-0 flex-1 items-center gap-2">
-                        <span className="bg-primary/10 text-primary inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium">
-                          <Shirt className="h-3 w-3" /> Uniform
-                        </span>
-                        <p className="text-muted-foreground text-xs">{formatTimestamp(order.timestamp)}</p>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        <Badge variant="secondary" className="text-xs">
-                          {order.items.length} item{order.items.length !== 1 ? "s" : ""}
-                        </Badge>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
-                          onClick={() => toggleExpand(entry.key)}
-                        >
-                          {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
+                return (
+                  <OrderDisclosure
+                    key={entry.key}
+                    open={expanded}
+                    onToggle={() => toggleExpand(entry.key)}
+                    label={`uniform order from ${formatTimestamp(order.timestamp)}`}
+                    muted={false}
+                    title={itemSummary(order.items.map((i) => i.itemType))}
+                    meta={`Uniform · ${formatTimestamp(order.timestamp)}`}
+                    aside={<OrderStatusBadge status={orderStatus(order)} />}
+                  >
+                    <ul className="space-y-2">
+                      {order.items.map((item) => {
+                        const isEditing = editingItemId === item.id
+                        const canEdit = !item.givenAt
 
-                  {expanded && (
-                    <CardContent className="space-y-3 pt-4">
-                      <ul className="space-y-2">
-                        {order.items.map((item) => {
-                          const isEditing = editingItemId === item.id
-                          const canEdit = !item.givenAt
-
-                          return (
-                            <li key={item.id} className="bg-muted/30 space-y-2 rounded-md border p-3">
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="min-w-0 flex-1 space-y-1">
-                                  <p className="text-sm font-medium">{item.itemType}</p>
-                                  {item.needSizing ? (
-                                    <SizingDetailsDisplay raw={item.sizingDetails} />
-                                  ) : (
-                                    <p className="text-muted-foreground text-xs">Size: {item.size || "—"}</p>
-                                  )}
-                                </div>
-                                {canEdit && !isEditing && (
-                                  <div className="flex shrink-0 gap-1.5">
-                                    <Button
-                                      size="icon"
-                                      variant="ghost"
-                                      className="h-7 w-7"
-                                      onClick={() => {
-                                        setEditingItemId(item.id)
-                                        setAddingToId(null)
-                                      }}
-                                      aria-label="Edit sizing"
-                                    >
-                                      <Pencil className="h-3.5 w-3.5" />
-                                    </Button>
-                                    <Button
-                                      size="icon"
-                                      variant="ghost"
-                                      className="text-destructive hover:bg-destructive/10 hover:text-destructive h-7 w-7"
-                                      disabled={isSaving}
-                                      onClick={() =>
-                                        setPendingRemove({
-                                          kind: "uniform",
-                                          order,
-                                          itemId: item.id,
-                                          label: item.itemType,
-                                        })
-                                      }
-                                      aria-label="Remove item"
-                                    >
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                    </Button>
-                                  </div>
+                        return (
+                          <li key={item.id} className="bg-muted/30 space-y-2 rounded-md border p-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1 space-y-1">
+                                <p className="text-sm font-medium">{item.itemType}</p>
+                                {item.needSizing ? (
+                                  <SizingDetailsDisplay raw={item.sizingDetails} />
+                                ) : (
+                                  <p className="text-muted-foreground text-xs">Size: {item.size || "—"}</p>
                                 )}
                               </div>
-
-                              {item.givenAt && (
-                                <div className="bg-success/10 border-success/30 flex items-center gap-1.5 rounded-md border px-2.5 py-1.5">
-                                  <PackageCheck className="text-success h-3 w-3 shrink-0" />
-                                  <p className="text-success text-xs">
-                                    Issued {formatTimestamp(item.givenAt)}
-                                    {item.givenBy && <> · {item.givenBy}</>}
-                                  </p>
+                              {canEdit && !isEditing && (
+                                <div className="flex shrink-0 gap-1.5">
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-7 w-7"
+                                    onClick={() => {
+                                      setEditingItemId(item.id)
+                                      setAddingToId(null)
+                                    }}
+                                    aria-label="Edit sizing"
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="text-destructive hover:bg-destructive/10 hover:text-destructive h-7 w-7"
+                                    disabled={isSaving}
+                                    onClick={() =>
+                                      setPendingRemove({
+                                        kind: "uniform",
+                                        order,
+                                        itemId: item.id,
+                                        label: item.itemType,
+                                      })
+                                    }
+                                    aria-label="Remove item"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
                                 </div>
                               )}
-
-                              {isEditing && (
-                                <SizingEditor
-                                  itemType={item.itemType}
-                                  initial={{
-                                    size: item.size,
-                                    sizingDetails: item.sizingDetails,
-                                    needSizing: item.needSizing,
-                                  }}
-                                  onSave={(draft) => handleEditSave(order, item.id, draft)}
-                                  onCancel={() => setEditingItemId(null)}
-                                />
-                              )}
-                            </li>
-                          )
-                        })}
-                      </ul>
-
-                      {addingToId === order.id ? (
-                        <AddItemRow
-                          existingTypes={existingTypes}
-                          onAdd={(draft) => handleAddItem(order, draft)}
-                          onCancel={() => setAddingToId(null)}
-                        />
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 w-full text-xs"
-                          disabled={isSaving || existingTypes.size >= itemTypes.length}
-                          onClick={() => {
-                            setAddingToId(order.id)
-                            setEditingItemId(null)
-                          }}
-                        >
-                          <Plus className="mr-1.5 h-3.5 w-3.5" />
-                          Add Item
-                        </Button>
-                      )}
-
-                      {confirmCancelId === order.id ? (
-                        <div className="border-destructive/30 bg-destructive/10 space-y-2 rounded-md border p-3">
-                          <p className="text-destructive text-sm font-medium">Cancel this order?</p>
-                          <p className="text-muted-foreground text-xs">
-                            This cannot be undone. Any items not yet issued will be removed.
-                          </p>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              className="h-7 px-3 text-xs"
-                              disabled={isSaving}
-                              onClick={() => cancelOrder(order.id)}
-                            >
-                              {isSaving ? "Cancelling…" : "Yes, cancel order"}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-7 px-2 text-xs"
-                              onClick={() => setConfirmCancelId(null)}
-                            >
-                              Keep order
-                            </Button>
-                          </div>
-                        </div>
-                      ) : noneGiven ? (
-                        <div className="flex justify-end">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-destructive hover:bg-destructive/10 hover:text-destructive h-7 text-xs"
-                            disabled={isSaving}
-                            onClick={() => setConfirmCancelId(order.id)}
-                          >
-                            <X className="mr-1 h-3.5 w-3.5" />
-                            Cancel order
-                          </Button>
-                        </div>
-                      ) : null}
-                    </CardContent>
-                  )}
-                </Card>
-              )
-            }
-
-            // Badge order card
-            const order = entry.order
-            const noneGiven = order.items.every((i) => !i.givenAt)
-            const isSaving = savingBadgeId === order.id
-
-            return (
-              <Card key={entry.key}>
-                <CardHeader className="pb-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex min-w-0 flex-1 items-center gap-2">
-                      <span className="bg-warning/15 text-warning inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium">
-                        <Award className="h-3 w-3" /> Badge
-                      </span>
-                      <p className="text-muted-foreground text-xs">{formatTimestamp(order.timestamp)}</p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <Badge variant="secondary" className="text-xs">
-                        {order.items.length} badge{order.items.length !== 1 ? "s" : ""}
-                      </Badge>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8"
-                        onClick={() => toggleExpand(entry.key)}
-                      >
-                        {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-
-                {expanded && (
-                  <CardContent className="space-y-3 pt-4">
-                    <ul className="space-y-2">
-                      {order.items.map((item) => (
-                        <li key={item.id} className="bg-muted/30 space-y-2 rounded-md border p-3">
-                          <div className="flex items-start justify-between gap-2">
-                            <span className="min-w-0 flex-1">
-                              <p className="text-sm font-medium">
-                                {item.badgeName}
-                                {item.replacement && (
-                                  <span className="ml-2 rounded-md border border-amber-500/50 bg-amber-50 px-1.5 py-0.5 text-xs font-normal text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-                                    Replacement — £2 fee
-                                  </span>
-                                )}
-                              </p>
-                              {gainedWhereSummary(gainedWhereOptions, item) && (
-                                <p className="text-muted-foreground text-xs">
-                                  {gainedWhereSummary(gainedWhereOptions, item)}
-                                </p>
-                              )}
-                            </span>
-                            {!item.givenAt && (
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="text-destructive hover:bg-destructive/10 hover:text-destructive h-7 w-7"
-                                disabled={isSaving}
-                                onClick={() =>
-                                  setPendingRemove({
-                                    kind: "badge",
-                                    order,
-                                    itemId: item.id,
-                                    label: item.badgeName,
-                                  })
-                                }
-                                aria-label="Remove badge"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            )}
-                          </div>
-
-                          {item.givenAt && (
-                            <div className="bg-success/10 border-success/30 flex items-center gap-1.5 rounded-md border px-2.5 py-1.5">
-                              <PackageCheck className="text-success h-3 w-3 shrink-0" />
-                              <p className="text-success text-xs">
-                                Issued {formatTimestamp(item.givenAt)}
-                                {item.givenBy && <> · {item.givenBy}</>}
-                              </p>
                             </div>
-                          )}
-                        </li>
-                      ))}
+
+                            {item.givenAt && (
+                              <div className="bg-success/10 border-success/30 flex items-center gap-1.5 rounded-md border px-2.5 py-1.5">
+                                <PackageCheck className="text-success h-3 w-3 shrink-0" />
+                                <p className="text-success text-xs">
+                                  Issued {formatTimestamp(item.givenAt)}
+                                  {item.givenBy && <> · {item.givenBy}</>}
+                                </p>
+                              </div>
+                            )}
+
+                            {isEditing && (
+                              <SizingEditor
+                                itemType={item.itemType}
+                                initial={{
+                                  size: item.size,
+                                  sizingDetails: item.sizingDetails,
+                                  needSizing: item.needSizing,
+                                }}
+                                onSave={(draft) => handleEditSave(order, item.id, draft)}
+                                onCancel={() => setEditingItemId(null)}
+                              />
+                            )}
+                          </li>
+                        )
+                      })}
                     </ul>
 
-                    {addingToBadgeId === order.id ? (
-                      <AddBadgeRow
-                        onAdd={(badgeName, replacement, gainedWhere) =>
-                          handleAddBadge(order, badgeName, replacement, gainedWhere)
-                        }
-                        onCancel={() => setAddingToBadgeId(null)}
+                    {addingToId === order.id ? (
+                      <AddItemRow
+                        existingTypes={existingTypes}
+                        onAdd={(draft) => handleAddItem(order, draft)}
+                        onCancel={() => setAddingToId(null)}
                       />
                     ) : (
                       <Button
                         size="sm"
                         variant="outline"
                         className="h-8 w-full text-xs"
-                        disabled={isSaving}
+                        disabled={isSaving || existingTypes.size >= itemTypes.length}
                         onClick={() => {
-                          setAddingToBadgeId(order.id)
-                          setAddingToId(null)
+                          setAddingToId(order.id)
+                          setEditingItemId(null)
                         }}
                       >
                         <Plus className="mr-1.5 h-3.5 w-3.5" />
-                        Add Badge
+                        Add Item
                       </Button>
                     )}
 
-                    {confirmCancelBadgeId === order.id ? (
+                    {confirmCancelId === order.id ? (
                       <div className="border-destructive/30 bg-destructive/10 space-y-2 rounded-md border p-3">
-                        <p className="text-destructive text-sm font-medium">Cancel this badge order?</p>
-                        <p className="text-muted-foreground text-xs">This cannot be undone.</p>
+                        <p className="text-destructive text-sm font-medium">Cancel this order?</p>
+                        <p className="text-muted-foreground text-xs">
+                          This cannot be undone. Any items not yet issued will be removed.
+                        </p>
                         <div className="flex gap-2">
                           <Button
                             size="sm"
                             variant="destructive"
                             className="h-7 px-3 text-xs"
                             disabled={isSaving}
-                            onClick={() => cancelBadgeOrder(order.id)}
+                            onClick={() => cancelOrder(order.id)}
                           >
                             {isSaving ? "Cancelling…" : "Yes, cancel order"}
                           </Button>
@@ -1377,7 +1210,7 @@ export default function MyOrdersPage() {
                             size="sm"
                             variant="ghost"
                             className="h-7 px-2 text-xs"
-                            onClick={() => setConfirmCancelBadgeId(null)}
+                            onClick={() => setConfirmCancelId(null)}
                           >
                             Keep order
                           </Button>
@@ -1390,18 +1223,151 @@ export default function MyOrdersPage() {
                           variant="ghost"
                           className="text-destructive hover:bg-destructive/10 hover:text-destructive h-7 text-xs"
                           disabled={isSaving}
-                          onClick={() => setConfirmCancelBadgeId(order.id)}
+                          onClick={() => setConfirmCancelId(order.id)}
                         >
                           <X className="mr-1 h-3.5 w-3.5" />
                           Cancel order
                         </Button>
                       </div>
                     ) : null}
-                  </CardContent>
-                )}
-              </Card>
-            )
-          })}
+                  </OrderDisclosure>
+                )
+              }
+
+              // Badge order card
+              const order = entry.order
+              const noneGiven = order.items.every((i) => !i.givenAt)
+              const isSaving = savingBadgeId === order.id
+
+              return (
+                <OrderDisclosure
+                  key={entry.key}
+                  open={expanded}
+                  onToggle={() => toggleExpand(entry.key)}
+                  label={`badges order from ${formatTimestamp(order.timestamp)}`}
+                  muted={false}
+                  title={itemSummary(order.items.map((i) => i.badgeName))}
+                  meta={`Badges · ${formatTimestamp(order.timestamp)}`}
+                  aside={<OrderStatusBadge status={orderStatus(order)} />}
+                >
+                  <ul className="space-y-2">
+                    {order.items.map((item) => (
+                      <li key={item.id} className="bg-muted/30 space-y-2 rounded-md border p-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="min-w-0 flex-1">
+                            <p className="text-sm font-medium">
+                              {item.badgeName}
+                              {item.replacement && (
+                                <span className="border-warning/40 bg-warning/10 text-warning ml-2 rounded-md border px-1.5 py-0.5 text-xs font-normal">
+                                  Replacement — £2 fee
+                                </span>
+                              )}
+                            </p>
+                            {gainedWhereSummary(gainedWhereOptions, item) && (
+                              <p className="text-muted-foreground text-xs">
+                                {gainedWhereSummary(gainedWhereOptions, item)}
+                              </p>
+                            )}
+                          </span>
+                          {!item.givenAt && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="text-destructive hover:bg-destructive/10 hover:text-destructive h-7 w-7"
+                              disabled={isSaving}
+                              onClick={() =>
+                                setPendingRemove({
+                                  kind: "badge",
+                                  order,
+                                  itemId: item.id,
+                                  label: item.badgeName,
+                                })
+                              }
+                              aria-label="Remove badge"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                        </div>
+
+                        {item.givenAt && (
+                          <div className="bg-success/10 border-success/30 flex items-center gap-1.5 rounded-md border px-2.5 py-1.5">
+                            <PackageCheck className="text-success h-3 w-3 shrink-0" />
+                            <p className="text-success text-xs">
+                              Issued {formatTimestamp(item.givenAt)}
+                              {item.givenBy && <> · {item.givenBy}</>}
+                            </p>
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+
+                  {addingToBadgeId === order.id ? (
+                    <AddBadgeRow
+                      onAdd={(badgeName, replacement, gainedWhere) =>
+                        handleAddBadge(order, badgeName, replacement, gainedWhere)
+                      }
+                      onCancel={() => setAddingToBadgeId(null)}
+                    />
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 w-full text-xs"
+                      disabled={isSaving}
+                      onClick={() => {
+                        setAddingToBadgeId(order.id)
+                        setAddingToId(null)
+                      }}
+                    >
+                      <Plus className="mr-1.5 h-3.5 w-3.5" />
+                      Add Badge
+                    </Button>
+                  )}
+
+                  {confirmCancelBadgeId === order.id ? (
+                    <div className="border-destructive/30 bg-destructive/10 space-y-2 rounded-md border p-3">
+                      <p className="text-destructive text-sm font-medium">Cancel this badge order?</p>
+                      <p className="text-muted-foreground text-xs">This cannot be undone.</p>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="h-7 px-3 text-xs"
+                          disabled={isSaving}
+                          onClick={() => cancelBadgeOrder(order.id)}
+                        >
+                          {isSaving ? "Cancelling…" : "Yes, cancel order"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-xs"
+                          onClick={() => setConfirmCancelBadgeId(null)}
+                        >
+                          Keep order
+                        </Button>
+                      </div>
+                    </div>
+                  ) : noneGiven ? (
+                    <div className="flex justify-end">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive hover:bg-destructive/10 hover:text-destructive h-7 text-xs"
+                        disabled={isSaving}
+                        onClick={() => setConfirmCancelBadgeId(order.id)}
+                      >
+                        <X className="mr-1 h-3.5 w-3.5" />
+                        Cancel order
+                      </Button>
+                    </div>
+                  ) : null}
+                </OrderDisclosure>
+              )
+            })}
+          </OrderList>
         </section>
       )}
 
@@ -1409,115 +1375,31 @@ export default function MyOrdersPage() {
       {allCompleted.length > 0 && (
         <section className="space-y-3">
           <SectionHeading title="Completed" />
-          {allCompleted.map((entry) => {
-            const expanded = expandedIds.has(entry.key)
+          <OrderList>
+            {allCompleted.map((entry) => {
+              const expanded = expandedIds.has(entry.key)
 
-            if (entry.kind === "uniform") {
-              const order = entry.order
-              return (
-                <Card key={entry.key} className="opacity-75">
-                  <CardHeader className="pb-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex min-w-0 flex-1 items-center gap-2">
-                        <span className="bg-primary/10 text-primary inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium">
-                          <Shirt className="h-3 w-3" /> Uniform
-                        </span>
-                        <p className="text-muted-foreground text-xs">{formatTimestamp(order.timestamp)}</p>
-                        <Badge className="border-success/40 bg-success/10 text-success text-xs">
-                          Completed
-                        </Badge>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        <Badge variant="secondary" className="text-xs">
-                          {order.items.length} item{order.items.length !== 1 ? "s" : ""}
-                        </Badge>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
-                          onClick={() => toggleExpand(entry.key)}
-                        >
-                          {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  {expanded && (
-                    <CardContent className="pt-4">
-                      <ul className="space-y-2">
-                        {order.items.map((item) => (
-                          <li key={item.id} className="bg-muted/30 space-y-1 rounded-md border p-3">
-                            <p className="text-sm font-medium">{item.itemType}</p>
-                            {item.needSizing ? (
-                              <SizingDetailsDisplay raw={item.sizingDetails} />
-                            ) : (
-                              <p className="text-muted-foreground text-xs">Size: {item.size || "—"}</p>
-                            )}
-                            {item.givenAt && (
-                              <div className="bg-success/10 border-success/30 flex items-center gap-1.5 rounded-md border px-2.5 py-1.5">
-                                <PackageCheck className="text-success h-3 w-3 shrink-0" />
-                                <p className="text-success text-xs">
-                                  Issued {formatTimestamp(item.givenAt)}
-                                  {item.givenBy && <> · {item.givenBy}</>}
-                                </p>
-                              </div>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                  )}
-                </Card>
-              )
-            }
-
-            // Completed badge order
-            const order = entry.order
-            return (
-              <Card key={entry.key} className="opacity-75">
-                <CardHeader className="pb-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex min-w-0 flex-1 items-center gap-2">
-                      <span className="bg-warning/15 text-warning inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium">
-                        <Award className="h-3 w-3" /> Badge
-                      </span>
-                      <p className="text-muted-foreground text-xs">{formatTimestamp(order.timestamp)}</p>
-                      <Badge className="border-success/40 bg-success/10 text-success text-xs">
-                        Completed
-                      </Badge>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <Badge variant="secondary" className="text-xs">
-                        {order.items.length} badge{order.items.length !== 1 ? "s" : ""}
-                      </Badge>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8"
-                        onClick={() => toggleExpand(entry.key)}
-                      >
-                        {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                {expanded && (
-                  <CardContent className="pt-4">
+              if (entry.kind === "uniform") {
+                const order = entry.order
+                return (
+                  <OrderDisclosure
+                    key={entry.key}
+                    open={expanded}
+                    onToggle={() => toggleExpand(entry.key)}
+                    label={`uniform order from ${formatTimestamp(order.timestamp)}`}
+                    muted={true}
+                    title={itemSummary(order.items.map((i) => i.itemType))}
+                    meta={`Uniform · ${formatTimestamp(order.timestamp)}`}
+                    aside={<OrderStatusBadge status={orderStatus(order)} />}
+                  >
                     <ul className="space-y-2">
                       {order.items.map((item) => (
                         <li key={item.id} className="bg-muted/30 space-y-1 rounded-md border p-3">
-                          <p className="text-sm font-medium">
-                            {item.badgeName}
-                            {item.replacement && (
-                              <span className="ml-2 rounded-md border border-amber-500/50 bg-amber-50 px-1.5 py-0.5 text-xs font-normal text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-                                Replacement — £2 fee
-                              </span>
-                            )}
-                          </p>
-                          {gainedWhereSummary(gainedWhereOptions, item) && (
-                            <p className="text-muted-foreground text-xs">
-                              {gainedWhereSummary(gainedWhereOptions, item)}
-                            </p>
+                          <p className="text-sm font-medium">{item.itemType}</p>
+                          {item.needSizing ? (
+                            <SizingDetailsDisplay raw={item.sizingDetails} />
+                          ) : (
+                            <p className="text-muted-foreground text-xs">Size: {item.size || "—"}</p>
                           )}
                           {item.givenAt && (
                             <div className="bg-success/10 border-success/30 flex items-center gap-1.5 rounded-md border px-2.5 py-1.5">
@@ -1531,30 +1413,74 @@ export default function MyOrdersPage() {
                         </li>
                       ))}
                     </ul>
-                  </CardContent>
-                )}
-              </Card>
-            )
-          })}
+                  </OrderDisclosure>
+                )
+              }
+
+              // Completed badge order
+              const order = entry.order
+              return (
+                <OrderDisclosure
+                  key={entry.key}
+                  open={expanded}
+                  onToggle={() => toggleExpand(entry.key)}
+                  label={`badges order from ${formatTimestamp(order.timestamp)}`}
+                  muted={true}
+                  title={itemSummary(order.items.map((i) => i.badgeName))}
+                  meta={`Badges · ${formatTimestamp(order.timestamp)}`}
+                  aside={<OrderStatusBadge status={orderStatus(order)} />}
+                >
+                  <ul className="space-y-2">
+                    {order.items.map((item) => (
+                      <li key={item.id} className="bg-muted/30 space-y-1 rounded-md border p-3">
+                        <p className="text-sm font-medium">
+                          {item.badgeName}
+                          {item.replacement && (
+                            <span className="border-warning/40 bg-warning/10 text-warning ml-2 rounded-md border px-1.5 py-0.5 text-xs font-normal">
+                              Replacement — £2 fee
+                            </span>
+                          )}
+                        </p>
+                        {gainedWhereSummary(gainedWhereOptions, item) && (
+                          <p className="text-muted-foreground text-xs">
+                            {gainedWhereSummary(gainedWhereOptions, item)}
+                          </p>
+                        )}
+                        {item.givenAt && (
+                          <div className="bg-success/10 border-success/30 flex items-center gap-1.5 rounded-md border px-2.5 py-1.5">
+                            <PackageCheck className="text-success h-3 w-3 shrink-0" />
+                            <p className="text-success text-xs">
+                              Issued {formatTimestamp(item.givenAt)}
+                              {item.givenBy && <> · {item.givenBy}</>}
+                            </p>
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </OrderDisclosure>
+              )
+            })}
+          </OrderList>
         </section>
       )}
 
       {/* Confirm remove item dialog */}
-      <Dialog
+      <ResponsiveDialog
         open={!!pendingRemove}
         onOpenChange={(open) => {
           if (!open) setPendingRemove(null)
         }}
       >
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Remove item?</DialogTitle>
-            <DialogDescription>
+        <ResponsiveDialogContent className="max-w-sm">
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>Remove item?</ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
               <span className="text-foreground font-medium">{pendingRemove?.label}</span> will be removed from
               your order. This cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2">
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
+          <ResponsiveDialogFooter className="gap-2">
             <Button variant="ghost" onClick={() => setPendingRemove(null)}>
               Keep it
             </Button>
@@ -1572,9 +1498,9 @@ export default function MyOrdersPage() {
             >
               Remove
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </ResponsiveDialogFooter>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
     </div>
   )
 }
