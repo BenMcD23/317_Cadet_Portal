@@ -1,6 +1,7 @@
 "use client"
 
 import Image from "next/image"
+import Link from "next/link"
 import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 
@@ -80,7 +81,10 @@ export default function LoginPage() {
           </Button>
 
           <p className="text-muted-foreground text-center text-xs lg:text-left">
-            Access is restricted to @317atc.co.uk accounts.
+            Access is restricted to @317atc.co.uk accounts.{" "}
+            <Link href="/privacy" className="hover:text-foreground underline underline-offset-4">
+              Privacy notice
+            </Link>
           </p>
         </div>
       </div>

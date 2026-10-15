@@ -104,8 +104,8 @@ function AppSidebar() {
   )
 }
 
-/** Auth pages render bare — no sidebar or header. */
-const NO_SHELL_ROUTES = ["/login", "/unauthorized"]
+/** Auth pages and the public privacy notice render bare — no sidebar or header. */
+const NO_SHELL_ROUTES = ["/login", "/unauthorized", "/privacy"]
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
