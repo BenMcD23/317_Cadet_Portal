@@ -21,9 +21,16 @@ describe("middleware authorized()", () => {
   })
 
   it("everything else needs a session", () => {
-    expect(visit("/my-orders", null)).toBe("redirect:/login")
+    expect(visit("/my-orders", null)).toBe("redirect:/login?callbackUrl=%2Fmy-orders")
     expect(visit("/my-orders", cadet())).toBe(true)
     expect(visit("/unauthorized", cadet("x@gmail.com"))).toBe(true)
+  })
+
+  it("a signed-out scan of a lesson QR comes back to that lesson after signing in", () => {
+    expect(visit("/lesson/abc123", null)).toBe("redirect:/login?callbackUrl=%2Flesson%2Fabc123")
+    expect(visit("/my-orders?x=1", null)).toBe("redirect:/login?callbackUrl=%2Fmy-orders%3Fx%3D1")
+    // The dashboard is where sign-in goes anyway; no need to say so.
+    expect(visit("/", null)).toBe("redirect:/login")
   })
 
   it("an outside account is turned away, whatever the case of the domain", () => {

@@ -31,7 +31,15 @@ export const authConfig: NextAuthConfig = {
         return true
       }
 
-      if (!isLoggedIn) return Response.redirect(new URL("/login", nextUrl))
+      if (!isLoggedIn) {
+        // Remember where they were going, so a cadet who scans a lesson's QR
+        // while signed out is checked in after signing in, not dropped on the
+        // dashboard.
+        const login = new URL("/login", nextUrl)
+        const target = nextUrl.pathname + nextUrl.search
+        if (target !== "/") login.searchParams.set("callbackUrl", target)
+        return Response.redirect(login)
+      }
       if (isUnauthorizedPage) return true
 
       // Token has expired and could not be refreshed — force re-login
