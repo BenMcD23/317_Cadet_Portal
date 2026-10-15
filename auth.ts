@@ -1,5 +1,5 @@
 import NextAuth from "next-auth"
-import { authConfig } from "./auth.config"
+import { authConfig, DEV_USERS, type DevRole } from "./auth.config"
 import { ALLOWED_DOMAIN } from "@/lib/config"
 
 async function refreshGoogleToken(refreshToken: string) {
@@ -96,7 +96,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   callbacks: {
     ...authConfig.callbacks,
-    async jwt({ token, account }) {
+    async jwt({ token, account, user }) {
+      // Dev sign-in (see auth.config.ts): no Google behind it, so no refresh.
+      if (account?.provider === "credentials") {
+        const role =
+          (Object.keys(DEV_USERS) as DevRole[]).find((r) => DEV_USERS[r].email === user?.email) ?? "snco"
+        return {
+          ...token,
+          id_token: `dev-fake-token:${role}`,
+          expires_at: Math.floor(Date.now() / 1000) + 366 * 24 * 60 * 60,
+          error: undefined,
+        }
+      }
       // Initial sign-in. The access token is never sent anywhere, so it isn't
       // kept: it only bloats the cookie towards the size where Auth.js splits
       // it into chunks, and stale chunks then break the session.
@@ -145,7 +156,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (token.error) session.error = token.error as string
       return session
     },
-    async signIn({ user }) {
+    async signIn({ user, account }) {
+      if (account?.provider === "credentials") return true // dev sign-in only
       const email = (user.email ?? "").toLowerCase()
       return email.endsWith(`@${ALLOWED_DOMAIN.toLowerCase()}`)
     },

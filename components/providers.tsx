@@ -4,6 +4,7 @@ import { useState } from "react"
 import { SessionProvider } from "next-auth/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ThemeProvider } from "next-themes"
+import { MotionConfig } from "motion/react"
 import { Toaster } from "sonner"
 
 import { ApiStatusOverlay } from "@/components/api-status-overlay"
@@ -23,7 +24,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <SessionProvider>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider attribute="class" defaultTheme="dark" disableTransitionOnChange>
-          <ReferenceProvider>{children}</ReferenceProvider>
+          {/* Animations honour the OS "reduce motion" setting everywhere. */}
+          <MotionConfig reducedMotion="user">
+            <ReferenceProvider>{children}</ReferenceProvider>
+          </MotionConfig>
           <Toaster position="top-right" richColors />
           <ApiStatusOverlay />
         </ThemeProvider>
