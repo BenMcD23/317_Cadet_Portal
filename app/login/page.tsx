@@ -1,8 +1,11 @@
 "use client"
 
+import { Suspense } from "react"
 import Image from "next/image"
+import { useSearchParams } from "next/navigation"
 import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
+import { safeCallback } from "@/lib/redirect"
 
 function GoogleIcon() {
   return (
@@ -27,7 +30,17 @@ function GoogleIcon() {
   )
 }
 
+/** useSearchParams needs a Suspense boundary or the page fails to prerender. */
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <Login />
+    </Suspense>
+  )
+}
+
+function Login() {
+  const callback = safeCallback(useSearchParams().get("callbackUrl"))
   return (
     <div className="grid min-h-screen lg:grid-cols-[5fr_4fr]">
       {/* Brand panel: a wash of the sidebar accent, nothing busier. */}
@@ -73,7 +86,7 @@ export default function LoginPage() {
             variant="outline"
             size="lg"
             className="w-full"
-            onClick={() => signIn("google", { redirectTo: "/" })}
+            onClick={() => signIn("google", { redirectTo: callback })}
           >
             <GoogleIcon />
             Continue with Google
