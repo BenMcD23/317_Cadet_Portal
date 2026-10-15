@@ -54,3 +54,37 @@ every page.
   API returns 500. A new page must survive both — check `res.ok` before using a
   response body.
 - `lib/lib.test.ts` fails if a sidebar link has no page.
+
+# UI: how it should look and feel
+
+Read `PRODUCT.md` first. The users are cadets aged 12–18 on their own phones,
+doing one short task: order kit, check an order, check in to a lesson. The look
+is the same 317 identity as the staff SMS site (`../317_SMS_Site`, whose
+CLAUDE.md has the full UI rules: tokens not literal colours, flat cards, no
+nested cards, no decoration, reuse before you build). What differs here:
+
+- **Phone first, one thumb, one task per screen.** Design at 390px and widen.
+  Lists of places to go are `ActionList` (full-width rows, 56px minimum, the
+  chevron always visible); a long list of records is a framed list, not cards.
+- **Plain words a 12-year-old understands.** "Ready to collect", "Needs
+  sizing", "With the stores" — not "Pending" or "Awaiting QM action". Nav
+  label, page title and button text agree ("Order Uniform"). Say what happens
+  next after an action.
+- **Orders** are `OrderDisclosure` rows in an `OrderList` showing what's in the
+  order and its status (`lib/order-status.ts`) *before* it's opened. The
+  component is the same one the SMS site uses; keep the two copies in step.
+- **A dialog is a `ResponsiveDialog`** (bottom sheet on a phone).
+- **Colour:** tokens only (`text-warning`, `bg-primary/10`); status colours
+  mean a state. Nothing is conveyed by colour alone: the badge says the word.
+- **Motion** is for state (an order opening), 150–250ms, via `motion/react`
+  (already honours reduced motion); tests skip animations.
+- Prettier here is no-semicolons; match it (`npm run format`).
+
+**Looking at it.** Run `scripts/preview.sh` from the SMS site repo: it starts
+the seeded API, both sites and fake sign-in. On `http://localhost:3001/login`
+use SNCO or NCO (cadets with a record) or STAFF (an adult with none, the
+other code path). The dev sign-in only exists with `AUTH_DEV_BYPASS=1` and
+never in a production build. Check pages at 390 and 1440, light and dark.
+
+Before calling UI work done: `npm run check`, a screenshot at phone width, and
+`/impeccable detect` over the changed files.
