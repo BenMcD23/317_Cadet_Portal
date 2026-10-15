@@ -5,6 +5,7 @@ import {
   ClipboardList,
   FileText,
   LayoutDashboard,
+  ShieldCheck,
   Shirt,
   UserRound,
 } from "lucide-react"
@@ -29,6 +30,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "My Details", href: "/my-details", icon: UserRound },
       { label: "My Inspections", href: "/my-inspections", icon: ClipboardCheck },
       { label: "Documents", href: "/documents", icon: FileText },
+      { label: "Privacy", href: "/privacy", icon: ShieldCheck },
     ],
   },
 ]

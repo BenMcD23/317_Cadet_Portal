@@ -26,6 +26,10 @@ export const authConfig: NextAuthConfig = {
       const isLoginPage = nextUrl.pathname === "/login"
       const isUnauthorizedPage = nextUrl.pathname === "/unauthorized"
 
+      // The privacy notice must be readable before anyone signs in, and by
+      // parents, who have no account on the squadron domain at all.
+      if (nextUrl.pathname === "/privacy") return true
+
       if (isLoginPage) {
         if (isLoggedIn) return Response.redirect(new URL("/", nextUrl))
         return true

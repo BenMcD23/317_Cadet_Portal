@@ -26,6 +26,19 @@ describe("middleware authorized()", () => {
     expect(visit("/unauthorized", cadet("x@gmail.com"))).toBe(true)
   })
 
+  it("the privacy notice is open to everyone, signed in or not, including parents' outside accounts", () => {
+    expect(visit("/privacy", null)).toBe(true)
+    expect(visit("/privacy", cadet())).toBe(true)
+    expect(visit("/privacy", cadet("parent@gmail.com"))).toBe(true)
+    // Even a dead session reads it rather than being bounced to sign out.
+    expect(visit("/privacy", cadet("cadet@317atc.co.uk", "RefreshAccessTokenError"))).toBe(true)
+  })
+
+  it("only the exact privacy path is public, not anything that starts with it", () => {
+    expect(visit("/privacy-extra", null)).toBe("redirect:/login")
+    expect(visit("/privacy/x", null)).toBe("redirect:/login")
+  })
+
   it("an outside account is turned away, whatever the case of the domain", () => {
     expect(visit("/", cadet("x@gmail.com"))).toBe("redirect:/unauthorized")
     expect(visit("/", cadet("Cadet@317ATC.CO.UK"))).toBe(true)
