@@ -74,6 +74,7 @@ describe("dev sign-in", () => {
   })
 
   it("signs in as accounts the API's dev seed knows, all inside the allowed domain", () => {
+    expect(DEV_USERS.cadet.email).toBe("dev.cadet@317atc.co.uk")
     expect(DEV_USERS.snco.email).toBe("dev.snco@317atc.co.uk")
     expect(DEV_USERS.nco.email).toBe("dev.nco@317atc.co.uk")
     for (const u of Object.values(DEV_USERS)) expect(u.email.endsWith("@317atc.co.uk")).toBe(true)

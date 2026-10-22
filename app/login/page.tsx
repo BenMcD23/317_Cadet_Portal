@@ -102,7 +102,7 @@ function Login() {
             <div className="flex flex-col gap-2 border-t pt-6">
               <p className="text-muted-foreground text-xs">Dev sign-in</p>
               <div className="flex gap-2">
-                {(["snco", "nco", "staff"] as const).map((role) => (
+                {(["cadet", "snco", "nco", "staff"] as const).map((role) => (
                   <Button
                     key={role}
                     variant="secondary"
