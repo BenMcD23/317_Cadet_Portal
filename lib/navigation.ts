@@ -5,12 +5,19 @@ import {
   ClipboardList,
   FileText,
   LayoutDashboard,
+  NotebookPen,
   Shirt,
   UserRound,
 } from "lucide-react"
 
 /** The site map behind the sidebar and the header title. */
-export type NavLink = { label: string; href: string; icon: LucideIcon }
+export type NavLink = {
+  label: string
+  href: string
+  icon: LucideIcon
+  /** Only listed once staff have switched this on for the cadet. */
+  onlyIf?: "activityLog"
+}
 export type NavSection = { label?: string; links: NavLink[] }
 
 export const NAV_SECTIONS: NavSection[] = [
@@ -26,6 +33,7 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     label: "Me",
     links: [
+      { label: "Activity Log", href: "/activity-log", icon: NotebookPen, onlyIf: "activityLog" },
       { label: "My Details", href: "/my-details", icon: UserRound },
       { label: "My Inspections", href: "/my-inspections", icon: ClipboardCheck },
       { label: "Documents", href: "/documents", icon: FileText },
