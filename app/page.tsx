@@ -9,7 +9,8 @@ import { SectionHeading } from "@/components/section-heading"
 import { ActionList, type ActionLink } from "@/components/action-list"
 import { useReference } from "@/lib/reference"
 import { formatDate } from "@/lib/format"
-import { Shirt, Award, ClipboardList, ChevronRight, MessageSquare } from "lucide-react"
+import { SECTION_INFO, sectionsDueThisWeek, type SectionKey } from "@/lib/activity-log"
+import { Shirt, Award, ClipboardList, ChevronRight, MessageSquare, NotebookPen } from "lucide-react"
 
 const QUICK_LINKS: ActionLink[] = [
   {
@@ -39,6 +40,12 @@ type Issuance = {
   sizeGiven: string | null
 }
 
+/** "Skills", "Skills and Physical", "Skills, Volunteering and Physical". */
+function listSections(keys: SectionKey[]): string {
+  const names = keys.map((k) => SECTION_INFO[k].label)
+  return names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names[0]
+}
+
 export default function HomePage() {
   const { data: session } = useSession()
   const { issuanceCategories } = useReference()
@@ -47,6 +54,22 @@ export default function HomePage() {
   // Only ever true for a cadet with no number saved — staff and adults have no
   // /cadets/me record, so they never see the prompt.
   const [needsPhone, setNeedsPhone] = useState(false)
+  // DofE sections still under an hour this week. Empty for anyone staff
+  // haven't switched on, so the reminder only reaches cadets doing it.
+  const [dofeDue, setDofeDue] = useState<SectionKey[]>([])
+
+  useEffect(() => {
+    async function loadActivityLog() {
+      try {
+        const res = await fetch("/api/cadet/activity-log")
+        if (!res.ok) return
+        setDofeDue(sectionsDueThisWeek(await res.json()))
+      } catch {
+        // A reminder isn't worth an error banner.
+      }
+    }
+    loadActivityLog()
+  }, [])
 
   useEffect(() => {
     async function loadPhone() {
@@ -104,6 +127,22 @@ export default function HomePage() {
             <span className="text-sm font-medium">Add your mobile number</span>
             <span className="text-muted-foreground text-xs text-pretty">
               You&apos;re not getting the parade night texts yet. Add a number in My Details.
+            </span>
+          </span>
+          <ChevronRight className="text-muted-foreground size-4 shrink-0" aria-hidden />
+        </Link>
+      )}
+
+      {dofeDue.length > 0 && (
+        <Link
+          href="/activity-log"
+          className="group border-primary/40 bg-primary/5 hover:border-primary focus-visible:ring-ring/50 flex items-center gap-3 rounded-lg border px-4 py-3 outline-none focus-visible:ring-2"
+        >
+          <NotebookPen className="text-primary size-5 shrink-0" aria-hidden />
+          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="text-sm font-medium">Log this week&apos;s DofE</span>
+            <span className="text-muted-foreground text-xs text-pretty">
+              {listSections(dofeDue)} {dofeDue.length === 1 ? "still needs" : "still need"} an hour this week.
             </span>
           </span>
           <ChevronRight className="text-muted-foreground size-4 shrink-0" aria-hidden />

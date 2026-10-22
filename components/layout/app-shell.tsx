@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation"
 import { Loader2 } from "lucide-react"
 
 import { NAV_SECTIONS, isLinkActive, pageTitle } from "@/lib/navigation"
+import { useActivityLog } from "@/lib/activity-log"
 import {
   Sidebar,
   SidebarContent,
@@ -38,6 +39,10 @@ function NavIcon({ icon: Icon }: { icon: React.ElementType }) {
 function AppSidebar() {
   const pathname = usePathname()
   const { isMobile, setOpenMobile } = useSidebar()
+  // Hidden unless staff have switched it on: an adult, a cadet not doing
+  // their DofE or an API hiccup all just leave the link out.
+  const activityLog = useActivityLog().data?.enabled === true
+  const shown = (link: { onlyIf?: "activityLog" }) => !link.onlyIf || activityLog
 
   // On mobile the sidebar is an overlay sheet — collapse it after navigating.
   const closeOnMobile = () => {
@@ -76,7 +81,7 @@ function AppSidebar() {
             {section.label && <SidebarGroupLabel>{section.label}</SidebarGroupLabel>}
             <SidebarGroupContent>
               <SidebarMenu>
-                {section.links.map((link) => (
+                {section.links.filter(shown).map((link) => (
                   <SidebarMenuItem key={link.href}>
                     <SidebarMenuButton
                       asChild

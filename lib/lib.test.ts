@@ -51,6 +51,7 @@ describe("navigation", () => {
     expect(pageTitle("/")).toBe("Dashboard")
     expect(pageTitle("/badge-order")).toBe("Order Badges")
     expect(pageTitle("/my-inspections")).toBe("My Inspections")
+    expect(pageTitle("/activity-log/skills")).toBe("DofE Activity Log")
     expect(pageTitle("/nowhere")).toBeNull()
   })
 })

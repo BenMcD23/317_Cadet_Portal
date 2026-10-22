@@ -9,6 +9,7 @@ vi.mock("@/lib/reference", () => ({
 }))
 
 import HomePage from "@/app/page"
+import { activityLog, sectionLog } from "@/tests/activity-log-fixtures"
 
 /** Answers each portal route from a table; anything unlisted is a 404. */
 function api(routes: Record<string, { status?: number; body: unknown }>) {
@@ -83,5 +84,39 @@ describe("portal home", () => {
     await waitFor(() => expect(screen.queryByRole("status")).toBeNull())
     expect(screen.queryByText("Uniform issued to you")).toBeNull()
     expect(screen.getByRole("link", { name: /My Orders/ })).toBeInTheDocument()
+  })
+
+  it("reminds a cadet doing their DofE which sections still need this week's hour", async () => {
+    api({
+      "/api/cadet/me": { body: { phone_number: "x" } },
+      "/api/cadet/issuances": { body: [] },
+      "/api/cadet/activity-log": {
+        body: activityLog({
+          skills: sectionLog(),
+          volunteering: sectionLog({ this_week_minutes: 60 }),
+          physical: sectionLog({ this_week_minutes: 20 }),
+        }),
+      },
+    })
+    render(<HomePage />)
+    const prompt = await screen.findByRole("link", { name: /Log this week's DofE/ })
+    expect(prompt).toHaveAttribute("href", "/activity-log")
+    expect(prompt).toHaveTextContent("Skills and Physical still need an hour this week.")
+  })
+
+  it.each([
+    ["isn't doing their DofE", { body: activityLog({}, false) }],
+    ["has done this week", { body: activityLog({ skills: sectionLog({ this_week_minutes: 90 }) }) }],
+    ["is an adult with no cadet record", { status: 404, body: { detail: "Not registered" } }],
+    ["can't be checked (API down)", { status: 500, body: { detail: "Internal Server Error" } }],
+  ])("doesn't remind someone who %s", async (_, answer) => {
+    api({
+      "/api/cadet/me": { body: { phone_number: "x" } },
+      "/api/cadet/issuances": { body: ISSUED },
+      "/api/cadet/activity-log": answer,
+    })
+    render(<HomePage />)
+    await screen.findByText("Uniform issued to you")
+    expect(screen.queryByText("Log this week's DofE")).toBeNull()
   })
 })

@@ -5,9 +5,11 @@ import Credentials from "next-auth/providers/credentials"
 import { ALLOWED_DOMAIN } from "@/lib/config"
 
 /** Accounts the dev sign-in can use. Must match the API's `_dev_fake_email`
- *  so the fake token resolves to the same account there: the SNCO and NCO are
- *  cadets in the dev seed (they have a /cadets/me record), staff is an adult. */
+ *  so the fake token resolves to the same account there: the cadet, SNCO and
+ *  NCO are cadets in the dev seed (they have a /cadets/me record), staff is an
+ *  adult. The cadet is an ordinary Cdt with no NCO role, named as seeded. */
 export const DEV_USERS = {
+  cadet: { email: "dev.cadet@317atc.co.uk", name: "Kian Ashworth" },
   snco: { email: "dev.snco@317atc.co.uk", name: "Dev SNCO" },
   nco: { email: "dev.nco@317atc.co.uk", name: "Dev NCO" },
   staff: { email: "ci.mcdonald@317atc.co.uk", name: "Dev Staff" },
