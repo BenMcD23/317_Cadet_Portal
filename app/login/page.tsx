@@ -78,7 +78,7 @@ function Login() {
             />
             <div className="flex flex-col gap-1.5">
               <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
-              <p className="text-muted-foreground text-sm">Use your 317 ATC Google account to continue.</p>
+              <p className="text-muted-foreground text-sm">Use your Google account to continue.</p>
             </div>
           </div>
 
@@ -93,7 +93,7 @@ function Login() {
           </Button>
 
           <p className="text-muted-foreground text-center text-xs lg:text-left">
-            Access is restricted to @317atc.co.uk accounts.
+            Access is restricted to 317 Failsworth cadets.
           </p>
 
           {/* Dev sign-in: the buttons only appear outside production, and the
