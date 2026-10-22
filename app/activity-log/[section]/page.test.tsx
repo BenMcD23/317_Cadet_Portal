@@ -271,7 +271,7 @@ describe("other states", () => {
 
   it("a log that's switched off says to speak to staff, with no form", async () => {
     show(activityLog({}, false))
-    expect(await screen.findByText("Your activity log isn't switched on")).toBeInTheDocument()
+    expect(await screen.findByText("Your DofE activity log isn't switched on")).toBeInTheDocument()
     expect(screen.queryByRole("button", { name: /Save|Start/ })).toBeNull()
   })
 

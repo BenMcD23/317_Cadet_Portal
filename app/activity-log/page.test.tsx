@@ -40,13 +40,13 @@ describe("Activity Log hub", () => {
 
   it("tells a cadet whose log is off to speak to staff, with no sections to tap", async () => {
     renderWith(() => json(activityLog({}, false)))
-    expect(await screen.findByText("Your activity log isn't switched on")).toBeInTheDocument()
+    expect(await screen.findByText("Your DofE activity log isn't switched on")).toBeInTheDocument()
     expect(screen.queryByRole("list", { name: "Your sections" })).toBeNull()
   })
 
   it("tells a signed-in adult it's for cadets, not that something broke", async () => {
     renderWith(() => json({ detail: "You are not registered in the system." }, 404))
-    expect(await screen.findByText("Activity logs are for cadets")).toBeInTheDocument()
+    expect(await screen.findByText("DofE activity logs are for cadets")).toBeInTheDocument()
     expect(screen.queryByRole("alert")).toBeNull()
   })
 
@@ -60,6 +60,6 @@ describe("Activity Log hub", () => {
 
   it("treats an error body where a log was expected as an error, not a blank page", async () => {
     renderWith(() => json([]))
-    expect(await screen.findByText("Couldn't load your activity log.")).toBeInTheDocument()
+    expect(await screen.findByText("Couldn't load your DofE activity log.")).toBeInTheDocument()
   })
 })

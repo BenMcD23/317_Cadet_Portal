@@ -37,10 +37,13 @@ function renderShell(response: () => Response) {
   return fetchMock
 }
 
-describe("the Activity Log link", () => {
+describe("the DofE Activity Log link", () => {
   it("shows once staff have switched the cadet's log on", async () => {
     renderShell(() => json(activityLog({ skills: sectionLog() })))
-    expect(await screen.findByRole("link", { name: "Activity Log" })).toHaveAttribute("href", "/activity-log")
+    expect(await screen.findByRole("link", { name: "DofE Activity Log" })).toHaveAttribute(
+      "href",
+      "/activity-log"
+    )
   })
 
   it.each([
@@ -53,6 +56,6 @@ describe("the Activity Log link", () => {
     // Let the answer land, so "hidden" isn't just "not loaded yet".
     await act(() => new Promise((r) => setTimeout(r, 20)))
     expect(screen.getByRole("link", { name: "My Details" })).toBeInTheDocument()
-    expect(screen.queryByRole("link", { name: "Activity Log" })).toBeNull()
+    expect(screen.queryByRole("link", { name: "DofE Activity Log" })).toBeNull()
   })
 })

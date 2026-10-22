@@ -85,7 +85,7 @@ export default function ActivityLogSectionPage() {
       {data && !data.enabled && (
         <EmptyState
           icon={NotebookPen}
-          title="Your activity log isn't switched on"
+          title="Your DofE activity log isn't switched on"
           description="Speak to a member of staff."
         />
       )}

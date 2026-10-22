@@ -33,7 +33,7 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     label: "Me",
     links: [
-      { label: "Activity Log", href: "/activity-log", icon: NotebookPen, onlyIf: "activityLog" },
+      { label: "DofE Activity Log", href: "/activity-log", icon: NotebookPen, onlyIf: "activityLog" },
       { label: "My Details", href: "/my-details", icon: UserRound },
       { label: "My Inspections", href: "/my-inspections", icon: ClipboardCheck },
       { label: "Documents", href: "/documents", icon: FileText },

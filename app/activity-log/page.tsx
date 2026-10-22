@@ -21,7 +21,7 @@ export default function ActivityLogPage() {
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 pb-16">
       <PageHeader
-        title="Activity Log"
+        title="DofE Activity Log"
         description={
           data?.enabled
             ? `Your ${data.level} DofE. Do at least 1 hour a week for each section, then add it here.`
@@ -34,7 +34,7 @@ export default function ActivityLogPage() {
       {error?.status === 404 ? (
         <EmptyState
           icon={UserRound}
-          title="Activity logs are for cadets"
+          title="DofE activity logs are for cadets"
           description="Your account isn't linked to a cadet record."
         />
       ) : (
@@ -44,7 +44,7 @@ export default function ActivityLogPage() {
       {data && !data.enabled && (
         <EmptyState
           icon={NotebookPen}
-          title="Your activity log isn't switched on"
+          title="Your DofE activity log isn't switched on"
           description="Staff switch it on when you start your Duke of Edinburgh's Award. Speak to them if you think it should be on."
         />
       )}

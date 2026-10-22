@@ -99,7 +99,7 @@ async function fetchActivityLog(): Promise<ActivityLog> {
   const res = await fetch("/api/cadet/activity-log")
   const data = await res.json().catch(() => null)
   if (!res.ok || !data || !Array.isArray(data.sections)) {
-    throw new ActivityLogError(errorMessage(data, "Couldn't load your activity log."), res.status)
+    throw new ActivityLogError(errorMessage(data, "Couldn't load your DofE activity log."), res.status)
   }
   return data
 }
