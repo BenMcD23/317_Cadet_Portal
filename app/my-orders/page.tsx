@@ -14,16 +14,7 @@ import { PageHeader } from "@/components/page-header"
 import { ErrorAlert } from "@/components/error-alert"
 import { SizeCombobox } from "@/components/size-combobox"
 import { cn } from "@/lib/utils"
-import {
-  Plus,
-  Trash2,
-  PackageCheck,
-  Pencil,
-  X,
-  Shirt,
-  Award,
-  ClipboardList,
-} from "lucide-react"
+import { Plus, Trash2, PackageCheck, Pencil, X, Shirt, Award, ClipboardList } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
