@@ -26,6 +26,14 @@ describe("config", () => {
     expect(config.API_BASE).toBe("http://localhost:8000")
     expect(config.ALLOWED_DOMAIN).toBe("317atc.co.uk")
   })
+
+  // One preview image runs in many cluster stacks, each with its own API.
+  it("API_INTERNAL_BASE, read at runtime, wins over the build-time address", async () => {
+    vi.stubEnv("NEXT_PUBLIC_API_BASE", "https://smsapi.317atc.co.uk")
+    vi.stubEnv("API_INTERNAL_BASE", "http://api:8000")
+    vi.resetModules()
+    expect((await import("@/lib/config")).API_BASE).toBe("http://api:8000")
+  })
 })
 
 describe("navigation", () => {

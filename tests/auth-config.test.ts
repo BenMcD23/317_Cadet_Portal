@@ -73,6 +73,22 @@ describe("dev sign-in", () => {
     expect(devBypassEnabled()).toBe(false)
   })
 
+  // The cluster's preview image is a production build; its own build flag
+  // (inlined, so Vercel can't gain it at runtime) is what lets it offer this.
+  it("is on in the preview image, a production build, with the flag set", () => {
+    vi.stubEnv("AUTH_DEV_BYPASS", "1")
+    vi.stubEnv("NODE_ENV", "production")
+    vi.stubEnv("NEXT_PUBLIC_PREVIEW_BUILD", "1")
+    expect(devBypassEnabled()).toBe(true)
+  })
+
+  it("stays off in the preview image without the flag", () => {
+    vi.stubEnv("AUTH_DEV_BYPASS", "")
+    vi.stubEnv("NODE_ENV", "production")
+    vi.stubEnv("NEXT_PUBLIC_PREVIEW_BUILD", "1")
+    expect(devBypassEnabled()).toBe(false)
+  })
+
   it("signs in as accounts the API's dev seed knows, all inside the allowed domain", () => {
     expect(DEV_USERS.cadet.email).toBe("dev.cadet@317atc.co.uk")
     expect(DEV_USERS.snco.email).toBe("dev.snco@317atc.co.uk")

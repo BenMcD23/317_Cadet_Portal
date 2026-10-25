@@ -104,6 +104,11 @@ node scripts/screenshot.mjs --base http://localhost:3001 --mobile /my-orders
 Before calling UI work done: `npm run check`, a screenshot at phone width, and
 `/impeccable detect` over the changed files.
 
+On a phone, label the pull request `preview` and the k3s cluster runs the
+branch on the same seed, on the tailnet: `https://pv-<branch>-portal.tail02e471.ts.net`
+(CADET is Cdt Kian Ashworth). See the SMS site's CLAUDE.md and k3s-homelab's
+ADR 0010; the image is this repo's `Dockerfile`.
+
 ## Branches and pull requests
 
 - Branch off `main` and open a pull request into it. `main` takes nothing else:
