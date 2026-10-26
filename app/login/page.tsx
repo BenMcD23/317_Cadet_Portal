@@ -5,6 +5,7 @@ import Image from "next/image"
 import { useSearchParams } from "next/navigation"
 import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
+import { devSignInBuild } from "@/lib/config"
 import { safeCallback } from "@/lib/redirect"
 
 function GoogleIcon() {
@@ -96,9 +97,10 @@ function Login() {
             Access is restricted to 317 Failsworth cadets.
           </p>
 
-          {/* Dev sign-in: the buttons only appear outside production, and the
-              provider behind them only exists when AUTH_DEV_BYPASS=1. */}
-          {process.env.NODE_ENV !== "production" && (
+          {/* Dev sign-in: the buttons only appear in a build that allows it
+              (devSignInBuild), and the provider behind them only exists when
+              AUTH_DEV_BYPASS=1. */}
+          {devSignInBuild() && (
             <div className="flex flex-col gap-2 border-t pt-6">
               <p className="text-muted-foreground text-xs">Dev sign-in</p>
               <div className="flex gap-2">

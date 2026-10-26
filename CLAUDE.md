@@ -104,6 +104,11 @@ node scripts/screenshot.mjs --base http://localhost:3001 --mobile /my-orders
 Before calling UI work done: `npm run check`, a screenshot at phone width, and
 `/impeccable detect` over the changed files.
 
+On a phone, label the pull request `preview` and the k3s cluster runs the
+branch on the same seed, on the tailnet: `https://pv-<branch>-portal.tail02e471.ts.net`
+(CADET is Cdt Kian Ashworth). See the SMS site's CLAUDE.md and k3s-homelab's
+ADR 0010; the image is this repo's `Dockerfile`.
+
 ## Branches and pull requests
 
 - Branch off `main` and open a pull request into it. `main` takes nothing else:
@@ -113,5 +118,12 @@ Before calling UI work done: `npm run check`, a screenshot at phone width, and
   `.github/` also need @BenMcD23's review (`.github/CODEOWNERS`).
 - Fill in the pull request template: what changed, why, and how you checked it.
   A UI change includes phone and desktop screenshots from the preview.
+- After opening a pull request, ask whether to deploy a preview of it. Only on
+  a yes, `gh pr edit <number> --add-label preview`: that builds the branch's
+  image, and the cluster then runs it with the other two apps on seeded data,
+  on the tailnet, within a few minutes (k3s-homelab ADR 0010). A change across
+  repos needs the label on each repo's pull request, or those run main.
+  Removing the label, merging or closing tears it down. Never add the label
+  unasked: at most three stacks run at once.
 - Before pushing: `npm run check && npm run format:check`, plus
   `npm run build` for anything that touches routing or config.

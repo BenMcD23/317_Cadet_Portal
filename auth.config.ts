@@ -2,7 +2,7 @@ import type { NextAuthConfig } from "next-auth"
 import Google from "next-auth/providers/google"
 import Credentials from "next-auth/providers/credentials"
 
-import { ALLOWED_DOMAIN } from "@/lib/config"
+import { ALLOWED_DOMAIN, devSignInBuild } from "@/lib/config"
 
 /** Accounts the dev sign-in can use. Must match the API's `_dev_fake_email`
  *  so the fake token resolves to the same account there: the cadet, SNCO and
@@ -17,10 +17,9 @@ export const DEV_USERS = {
 
 export type DevRole = keyof typeof DEV_USERS
 
-/** Dev sign-in needs the flag AND a non-production build, so a stray env var
- *  on a deployed build can't switch it on. */
-export const devBypassEnabled = () =>
-  process.env.AUTH_DEV_BYPASS === "1" && process.env.NODE_ENV !== "production"
+/** Dev sign-in needs the flag AND a build that allows it (`next dev` or the
+ *  preview image), so a stray env var on a deployed build can't switch it on. */
+export const devBypassEnabled = () => process.env.AUTH_DEV_BYPASS === "1" && devSignInBuild()
 
 export const authConfig: NextAuthConfig = {
   providers: [
