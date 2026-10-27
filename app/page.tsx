@@ -23,7 +23,7 @@ const QUICK_LINKS: ActionLink[] = [
     href: "/badge-order",
     icon: Award,
     title: "Order Badges",
-    desc: "Proficiency badges you've qualified for.",
+    desc: "Order badges you've qualified for.",
   },
   {
     href: "/my-orders",
