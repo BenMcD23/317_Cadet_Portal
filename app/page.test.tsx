@@ -36,6 +36,7 @@ describe("portal home", () => {
     expect(screen.getByRole("heading", { name: "Hello, Cara" })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: /Order Uniform/ })).toHaveAttribute("href", "/uniform-order")
     expect(screen.getByRole("link", { name: /Order Badges/ })).toHaveAttribute("href", "/badge-order")
+    expect(screen.getByText("Order badges you've qualified for.")).toBeInTheDocument()
     expect(screen.getByRole("link", { name: /My Orders/ })).toHaveAttribute("href", "/my-orders")
   })
 
