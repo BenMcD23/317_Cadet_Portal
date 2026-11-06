@@ -28,6 +28,7 @@ describe("middleware authorized()", () => {
 
   it("a signed-out scan of a lesson QR comes back to that lesson after signing in", () => {
     expect(visit("/lesson/abc123", null)).toBe("redirect:/login?callbackUrl=%2Flesson%2Fabc123")
+    expect(visit("/check-in/door-code", null)).toBe("redirect:/login?callbackUrl=%2Fcheck-in%2Fdoor-code")
     expect(visit("/my-orders?x=1", null)).toBe("redirect:/login?callbackUrl=%2Fmy-orders%3Fx%3D1")
     // The dashboard is where sign-in goes anyway; no need to say so.
     expect(visit("/", null)).toBe("redirect:/login")

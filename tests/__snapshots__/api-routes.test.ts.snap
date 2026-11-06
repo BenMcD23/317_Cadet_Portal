@@ -11,6 +11,7 @@ exports[`app/api route handlers > matches the pinned list of backend routes 1`] 
   "POST /api/cadet/badge-orders -> /cadets/me/badge-orders",
   "PATCH /api/cadet/badge-orders/[id] -> /cadets/me/badge-orders/:id",
   "DELETE /api/cadet/badge-orders/[id] -> /cadets/me/badge-orders/:id",
+  "POST /api/cadet/check-in/[code] -> /cadets/me/check-in/:code",
   "GET /api/cadet/inspections -> /cadets/me/inspections",
   "GET /api/cadet/issuances -> /cadets/me/issuances",
   "POST /api/cadet/lessons/[code] -> /cadets/me/lessons/:code",
