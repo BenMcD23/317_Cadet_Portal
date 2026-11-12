@@ -113,7 +113,7 @@ export default function HomePage() {
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 pb-16">
       <PageHeader
-        title={firstName ? `Hello, ${firstName}` : "Dashboard"}
+        title={firstName ? `Hello, ${firstName}` : "Home"}
         description="Order uniform and badges, and see what you've been issued"
       />
 

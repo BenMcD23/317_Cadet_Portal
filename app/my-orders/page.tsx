@@ -15,6 +15,7 @@ import { ErrorAlert } from "@/components/error-alert"
 import { SizeCombobox } from "@/components/size-combobox"
 import { cn } from "@/lib/utils"
 import { Plus, Trash2, PackageCheck, Pencil, X, Shirt, Award, ClipboardList } from "lucide-react"
+import { OrderSentNotice } from "@/components/order-sent-notice"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
@@ -1022,6 +1023,8 @@ export default function MyOrdersPage() {
         title="My Orders"
         description={loading ? "Loading…" : `${totalCount} order${totalCount !== 1 ? "s" : ""}`}
       />
+
+      <OrderSentNotice />
 
       <ErrorAlert message={error} title="Could not load your orders" />
 

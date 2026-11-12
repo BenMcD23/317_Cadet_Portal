@@ -4,7 +4,15 @@ import path from "node:path"
 import { describe, expect, it, vi } from "vitest"
 
 import { formatDate } from "@/lib/format"
-import { isLinkActive, NAV_SECTIONS, pageTitle } from "@/lib/navigation"
+import {
+  areaFor,
+  isLinkActive,
+  isNavLinkActive,
+  NAV_LINKS,
+  NAV_SECTIONS,
+  pageTitle,
+  shownTabs,
+} from "@/lib/navigation"
 import { buildBadgeName, gainedWhereLabel, needsGainedWhere, type BadgeCategory } from "@/lib/reference"
 import { cn } from "@/lib/utils"
 
@@ -55,12 +63,37 @@ describe("navigation", () => {
     expect(isLinkActive("/my-ordersX", "/my-orders")).toBe(false)
   })
 
-  it("titles each page from the nav, and nothing for unknown paths", () => {
-    expect(pageTitle("/")).toBe("Dashboard")
-    expect(pageTitle("/badge-order")).toBe("Order Badges")
-    expect(pageTitle("/my-inspections")).toBe("My Inspections")
-    expect(pageTitle("/activity-log/skills")).toBe("DofE Activity Log")
+  it("titles each page from its place in the nav, and nothing for unknown paths", () => {
+    expect(pageTitle("/")).toBe("Home")
+    expect(pageTitle("/badge-order")).toBe("Orders")
+    expect(pageTitle("/my-inspections")).toBe("Me")
+    expect(pageTitle("/activity-log/skills")).toBe("Me")
     expect(pageTitle("/nowhere")).toBeNull()
+  })
+
+  it("has three places, two of them areas whose row opens their first page", () => {
+    expect(NAV_LINKS.map((l) => l.label)).toEqual(["Home", "Orders", "Me"])
+    for (const link of NAV_LINKS.filter((l) => l.tabs)) expect(link.href).toBe(link.tabs![0].href)
+  })
+
+  it("puts ordering beside the orders, and lights the area on each of its pages", () => {
+    expect(areaFor("/uniform-order")?.label).toBe("Orders")
+    expect(areaFor("/my-orders")?.label).toBe("Orders")
+    expect(areaFor("/activity-log/physical")?.label).toBe("Me")
+    expect(areaFor("/")).toBeNull()
+    const orders = NAV_LINKS.find((l) => l.label === "Orders")!
+    expect(isNavLinkActive("/badge-order", orders)).toBe(true)
+    expect(isNavLinkActive("/my-details", orders)).toBe(false)
+  })
+
+  it("shows the DofE tab only once staff have switched the log on", () => {
+    const me = NAV_LINKS.find((l) => l.label === "Me")!
+    expect(shownTabs(me, { activityLog: false }).map((t) => t.label)).toEqual([
+      "Details",
+      "Inspections",
+      "Documents",
+    ])
+    expect(shownTabs(me, { activityLog: true }).map((t) => t.label)).toContain("DofE log")
   })
 })
 

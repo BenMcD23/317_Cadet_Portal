@@ -315,7 +315,8 @@ export default function BadgeOrderPage() {
         setError(data.detail ?? "Something went wrong. Please try again.")
         return
       }
-      router.push("/my-orders")
+      // My orders says it went, and what happens next.
+      router.push("/my-orders?sent=badge")
     } catch {
       setError("Network error. Please check your connection and try again.")
     } finally {
@@ -325,7 +326,10 @@ export default function BadgeOrderPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-6 pb-16">
-      <PageHeader title="Badge Order" description="Select the badges you need below" />
+      <PageHeader
+        title="Order badges"
+        description="Add the badges you've earned, then send the order to stores."
+      />
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Badge selector card */}
