@@ -327,7 +327,7 @@ export default function BadgeOrderPage() {
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-6 pb-16">
       <PageHeader
-        title="Order badges"
+        title="Order Badges"
         description="Add the badges you've earned, then send the order to stores."
       />
 

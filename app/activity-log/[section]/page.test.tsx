@@ -9,10 +9,7 @@ import type { ActivityLog } from "@/lib/activity-log"
 import { TODAY, activityLog, json, sectionLog } from "@/tests/activity-log-fixtures"
 
 const params = vi.hoisted(() => ({ value: { section: "volunteering" } as { section?: string } }))
-vi.mock("next/navigation", () => ({
-  usePathname: () => "/activity-log/skills",
-  useParams: () => params.value,
-}))
+vi.mock("next/navigation", () => ({ useParams: () => params.value }))
 
 type Call = { url: string; method: string; body: unknown }
 let calls: Call[]

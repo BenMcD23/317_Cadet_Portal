@@ -3,11 +3,10 @@
 import Link, { useLinkStatus } from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { Loader2, Menu } from "lucide-react"
+import { Loader2 } from "lucide-react"
 
+import { NAV_SECTIONS, isLinkActive, pageTitle } from "@/lib/navigation"
 import { useActivityLog } from "@/lib/activity-log"
-import { NAV_LINKS, isLinkActive, isNavLinkActive, pageTitle, shownPages } from "@/lib/navigation"
-import { cn } from "@/lib/utils"
 import {
   Sidebar,
   SidebarContent,
@@ -40,9 +39,10 @@ function NavIcon({ icon: Icon }: { icon: React.ElementType }) {
 function AppSidebar() {
   const pathname = usePathname()
   const { isMobile, setOpenMobile } = useSidebar()
-  // The DofE log only once staff switch it on; an adult or an API hiccup
-  // just leaves it out.
+  // Hidden unless staff have switched it on: an adult, a cadet not doing
+  // their DofE or an API hiccup all just leave the link out.
   const activityLog = useActivityLog().data?.enabled === true
+  const shown = (link: { onlyIf?: "activityLog" }) => !link.onlyIf || activityLog
 
   // On mobile the sidebar is an overlay sheet — collapse it after navigating.
   const closeOnMobile = () => {
@@ -54,7 +54,7 @@ function AppSidebar() {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild tooltip="Home">
+            <SidebarMenuButton size="lg" asChild tooltip="Dashboard">
               <Link href="/" onClick={closeOnMobile}>
                 <div className="flex aspect-square size-8 items-center justify-center overflow-hidden rounded-md bg-white/90">
                   <Image
@@ -75,36 +75,30 @@ function AppSidebar() {
         </SidebarMenu>
       </SidebarHeader>
 
-      {/* Home, then each place's pages under its name: on a laptop every
-          page is one click away, so the hubs the phone uses aren't needed. */}
       <SidebarContent>
-        {NAV_LINKS.map((link) => {
-          const pages = link.pages ? shownPages(link, { activityLog }) : null
-          const rows = pages ?? [link]
-          return (
-            <SidebarGroup key={link.href}>
-              {pages && <SidebarGroupLabel>{link.label}</SidebarGroupLabel>}
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {rows.map((row) => (
-                    <SidebarMenuItem key={row.href}>
-                      <SidebarMenuButton
-                        asChild
-                        tooltip={row.label}
-                        isActive={isLinkActive(pathname, row.href)}
-                      >
-                        <Link href={row.href} onClick={closeOnMobile}>
-                          <NavIcon icon={row.icon} />
-                          <span>{row.label}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          )
-        })}
+        {NAV_SECTIONS.map((section, i) => (
+          <SidebarGroup key={section.label ?? i}>
+            {section.label && <SidebarGroupLabel>{section.label}</SidebarGroupLabel>}
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {section.links.filter(shown).map((link) => (
+                  <SidebarMenuItem key={link.href}>
+                    <SidebarMenuButton
+                      asChild
+                      tooltip={link.label}
+                      isActive={isLinkActive(pathname, link.href)}
+                    >
+                      <Link href={link.href} onClick={closeOnMobile}>
+                        <NavIcon icon={link.icon} />
+                        <span>{link.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
 
       <SidebarFooter>
@@ -112,55 +106,6 @@ function AppSidebar() {
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
-  )
-}
-
-const TAB =
-  "flex min-h-14 w-full flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors"
-
-/**
- * The bottom bar on a phone, where the thumb is: Home, and the Orders and Me
- * hubs, which list their pages; More opens the menu (account, sign out).
- * Each place stays lit on every page in it. Before it, every move was the
- * menu button in the top corner and then a link: two taps and a stretch.
- */
-function MobileTabBar() {
-  const pathname = usePathname()
-  const { setOpenMobile, openMobile } = useSidebar()
-  return (
-    <nav
-      aria-label="Quick links"
-      className="bg-background/95 supports-[backdrop-filter]:bg-background/85 fixed inset-x-0 bottom-0 z-30 flex border-t pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden print:hidden"
-    >
-      <ul className="flex min-w-0 flex-1">
-        {NAV_LINKS.map((link) => {
-          const current = isNavLinkActive(pathname, link)
-          return (
-            <li key={link.href} className="flex min-w-0 flex-1">
-              <Link
-                href={link.href}
-                aria-current={current ? "page" : undefined}
-                className={cn(TAB, current ? "text-primary" : "text-muted-foreground")}
-              >
-                <link.icon className="size-5" aria-hidden />
-                {link.label}
-              </Link>
-            </li>
-          )
-        })}
-      </ul>
-      <div className="flex w-1/4 flex-none">
-        <button
-          type="button"
-          onClick={() => setOpenMobile(true)}
-          aria-expanded={openMobile}
-          className={cn(TAB, "text-muted-foreground")}
-        >
-          <Menu className="size-5" aria-hidden />
-          More
-        </button>
-      </div>
-    </nav>
   )
 }
 
@@ -188,9 +133,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <ThemeToggle />
           </div>
         </header>
-        {/* Room at the bottom on a phone so the tab bar never covers the last row. */}
-        <main className="min-w-0 flex-1 px-4 pt-6 pb-28 md:px-8 md:pb-6">{children}</main>
-        <MobileTabBar />
+        <main className="min-w-0 flex-1 px-4 py-6 md:px-8">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   )

@@ -428,7 +428,7 @@ export default function UniformOrderPage() {
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-6 pb-16">
       <PageHeader
-        title="Order uniform"
+        title="Order Uniform"
         description="Tick the items you need, then send the order to stores."
       />
 

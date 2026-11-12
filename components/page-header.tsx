@@ -1,20 +1,9 @@
-"use client"
-
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { ChevronLeft } from "lucide-react"
-
-import { hubFor } from "@/lib/navigation"
 import { cn } from "@/lib/utils"
 
 /**
  * Standard page header — title on the left, optional actions on the right.
- * Every page opens with one so the menu, the header title and the heading
- * agree on what the page is called.
- *
- * On a phone it also carries the way back to the page's hub ("‹ Orders"),
- * which the bottom bar opened. On a laptop the sidebar lists the pages
- * instead, so the link is hidden.
+ * Every page opens with one so the sidebar's link, the header title and the
+ * heading agree on what the page is called.
  */
 export function PageHeader({
   title,
@@ -27,29 +16,13 @@ export function PageHeader({
   actions?: React.ReactNode
   className?: string
 }) {
-  // Null outside the app router (a component rendered on its own in a test).
-  const hub = hubFor(usePathname() ?? "")
-
   return (
-    <div className="flex flex-col gap-2">
-      {hub && (
-        <Link
-          href={hub.href}
-          className="text-muted-foreground hover:text-foreground -ml-1 inline-flex min-h-9 w-fit items-center gap-1 text-sm md:hidden"
-        >
-          <ChevronLeft className="size-4" aria-hidden />
-          {hub.label}
-        </Link>
-      )}
-      <div
-        className={cn("flex flex-wrap items-end justify-between gap-x-6 gap-y-3 border-b pb-5", className)}
-      >
-        <div className="flex min-w-0 flex-col gap-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-balance">{title}</h1>
-          {description && <p className="text-muted-foreground text-sm text-pretty">{description}</p>}
-        </div>
-        {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+    <div className={cn("flex flex-wrap items-end justify-between gap-x-6 gap-y-3 border-b pb-5", className)}>
+      <div className="flex min-w-0 flex-col gap-1">
+        <h1 className="text-2xl font-semibold tracking-tight text-balance">{title}</h1>
+        {description && <p className="text-muted-foreground text-sm text-pretty">{description}</p>}
       </div>
+      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
   )
 }
