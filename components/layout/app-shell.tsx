@@ -5,7 +5,8 @@ import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { Loader2, Menu } from "lucide-react"
 
-import { NAV_LINKS, NAV_SECTIONS, isNavLinkActive, pageTitle } from "@/lib/navigation"
+import { useActivityLog } from "@/lib/activity-log"
+import { NAV_LINKS, isLinkActive, isNavLinkActive, pageTitle, shownPages } from "@/lib/navigation"
 import { cn } from "@/lib/utils"
 import {
   Sidebar,
@@ -39,6 +40,9 @@ function NavIcon({ icon: Icon }: { icon: React.ElementType }) {
 function AppSidebar() {
   const pathname = usePathname()
   const { isMobile, setOpenMobile } = useSidebar()
+  // The DofE log only once staff switch it on; an adult or an API hiccup
+  // just leaves it out.
+  const activityLog = useActivityLog().data?.enabled === true
 
   // On mobile the sidebar is an overlay sheet — collapse it after navigating.
   const closeOnMobile = () => {
@@ -71,30 +75,36 @@ function AppSidebar() {
         </SidebarMenu>
       </SidebarHeader>
 
+      {/* Home, then each place's pages under its name: on a laptop every
+          page is one click away, so the hubs the phone uses aren't needed. */}
       <SidebarContent>
-        {NAV_SECTIONS.map((section, i) => (
-          <SidebarGroup key={section.label ?? i}>
-            {section.label && <SidebarGroupLabel>{section.label}</SidebarGroupLabel>}
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {section.links.map((link) => (
-                  <SidebarMenuItem key={link.href}>
-                    <SidebarMenuButton
-                      asChild
-                      tooltip={link.label}
-                      isActive={isNavLinkActive(pathname, link)}
-                    >
-                      <Link href={link.href} onClick={closeOnMobile}>
-                        <NavIcon icon={link.icon} />
-                        <span>{link.label}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+        {NAV_LINKS.map((link) => {
+          const pages = link.pages ? shownPages(link, { activityLog }) : null
+          const rows = pages ?? [link]
+          return (
+            <SidebarGroup key={link.href}>
+              {pages && <SidebarGroupLabel>{link.label}</SidebarGroupLabel>}
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {rows.map((row) => (
+                    <SidebarMenuItem key={row.href}>
+                      <SidebarMenuButton
+                        asChild
+                        tooltip={row.label}
+                        isActive={isLinkActive(pathname, row.href)}
+                      >
+                        <Link href={row.href} onClick={closeOnMobile}>
+                          <NavIcon icon={row.icon} />
+                          <span>{row.label}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          )
+        })}
       </SidebarContent>
 
       <SidebarFooter>
@@ -109,9 +119,10 @@ const TAB =
   "flex min-h-14 w-full flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors"
 
 /**
- * The bottom bar on a phone, where the thumb is: Home, Orders, Me, and More
- * for the menu (account, sign out). Before it, every move was the menu
- * button in the top corner and then a link: two taps and a stretch.
+ * The bottom bar on a phone, where the thumb is: Home, and the Orders and Me
+ * hubs, which list their pages; More opens the menu (account, sign out).
+ * Each place stays lit on every page in it. Before it, every move was the
+ * menu button in the top corner and then a link: two taps and a stretch.
  */
 function MobileTabBar() {
   const pathname = usePathname()

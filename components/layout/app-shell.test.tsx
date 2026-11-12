@@ -45,7 +45,7 @@ function renderShell(path: string, response: () => Response = () => json(activit
 }
 
 describe("getting around", () => {
-  it("has three places on the phone's bottom bar, and More for the menu", () => {
+  it("has Home and the Orders and Me hubs on the phone's bottom bar, and More for the menu", () => {
     renderShell("/")
     const bar = screen.getByRole("navigation", { name: "Quick links" })
     expect(
@@ -54,8 +54,8 @@ describe("getting around", () => {
         .map((l) => [l.textContent, l.getAttribute("href")])
     ).toEqual([
       ["Home", "/"],
-      ["Orders", "/my-orders"],
-      ["Me", "/my-details"],
+      ["Orders", "/orders"],
+      ["Me", "/me"],
     ])
     expect(within(bar).getByRole("button", { name: "More" })).toHaveAttribute("aria-expanded", "false")
   })
@@ -67,21 +67,25 @@ describe("getting around", () => {
     expect(within(bar).getByRole("link", { name: "Home" })).not.toHaveAttribute("aria-current")
   })
 
-  it("puts placing an order one tap from the orders, with no dead end once you have some", () => {
-    renderShell("/my-orders")
-    const tabs = screen.getByRole("navigation", { name: "Orders" })
-    expect(within(tabs).getByRole("link", { name: "My orders" })).toHaveAttribute("aria-current", "page")
-    expect(within(tabs).getByRole("link", { name: "Order uniform" })).toHaveAttribute(
-      "href",
-      "/uniform-order"
-    )
-    expect(within(tabs).getByRole("link", { name: "Order badges" })).toHaveAttribute("href", "/badge-order")
+  it("gives a page inside a place the way back to its hub, and no tab row", () => {
+    renderShell("/uniform-order")
+    const back = screen
+      .getAllByRole("link", { name: "Orders" })
+      .find((l) => !l.closest("nav[aria-label='Quick links']"))!
+    expect(back).toHaveAttribute("href", "/orders")
+    expect(back).toHaveClass("md:hidden")
   })
 
-  it("shows no tab row on Home", () => {
-    renderShell("/")
-    expect(screen.queryByRole("navigation", { name: "Orders" })).toBeNull()
-    expect(screen.queryByRole("navigation", { name: "Me" })).toBeNull()
+  it("lists every page in the sidebar under its place, so a laptop needs no hubs", () => {
+    renderShell("/my-orders")
+    for (const [name, href] of [
+      ["My orders", "/my-orders"],
+      ["Order uniform", "/uniform-order"],
+      ["Order badges", "/badge-order"],
+      ["My details", "/my-details"],
+      ["Documents", "/documents"],
+    ])
+      expect(screen.getByRole("link", { name })).toHaveAttribute("href", href)
   })
 
   it("More opens the menu", async () => {
@@ -92,11 +96,10 @@ describe("getting around", () => {
   })
 })
 
-describe("the DofE log tab", () => {
-  it("shows under Me once staff have switched the cadet's log on", async () => {
+describe("the DofE log in the sidebar", () => {
+  it("shows once staff have switched the cadet's log on", async () => {
     renderShell("/my-details", () => json(activityLog({ skills: sectionLog() })))
-    const tabs = screen.getByRole("navigation", { name: "Me" })
-    expect(await within(tabs).findByRole("link", { name: "DofE log" })).toHaveAttribute(
+    expect(await screen.findByRole("link", { name: "DofE activity log" })).toHaveAttribute(
       "href",
       "/activity-log"
     )
@@ -111,8 +114,7 @@ describe("the DofE log tab", () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/cadet/activity-log"))
     // Let the answer land, so "hidden" isn't just "not loaded yet".
     await act(() => new Promise((r) => setTimeout(r, 20)))
-    const tabs = screen.getByRole("navigation", { name: "Me" })
-    expect(within(tabs).getByRole("link", { name: "Details" })).toBeInTheDocument()
-    expect(within(tabs).queryByRole("link", { name: "DofE log" })).toBeNull()
+    expect(screen.getByRole("link", { name: "My details" })).toBeInTheDocument()
+    expect(screen.queryByRole("link", { name: "DofE activity log" })).toBeNull()
   })
 })

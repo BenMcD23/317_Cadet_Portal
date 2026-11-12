@@ -4,15 +4,7 @@ import path from "node:path"
 import { describe, expect, it, vi } from "vitest"
 
 import { formatDate } from "@/lib/format"
-import {
-  areaFor,
-  isLinkActive,
-  isNavLinkActive,
-  NAV_LINKS,
-  NAV_SECTIONS,
-  pageTitle,
-  shownTabs,
-} from "@/lib/navigation"
+import { hubFor, isLinkActive, isNavLinkActive, NAV_LINKS, pageTitle, shownPages } from "@/lib/navigation"
 import { buildBadgeName, gainedWhereLabel, needsGainedWhere, type BadgeCategory } from "@/lib/reference"
 import { cn } from "@/lib/utils"
 
@@ -45,15 +37,15 @@ describe("config", () => {
 })
 
 describe("navigation", () => {
-  const links = NAV_SECTIONS.flatMap((s) => s.links)
+  const hrefs = NAV_LINKS.flatMap((l) => [l.href, ...(l.pages ?? []).map((p) => p.href)])
 
-  it.each(links.map((l) => [l.href]))("%s is a real page", (href) => {
+  it.each(hrefs.map((h) => [h]))("%s is a real page", (href) => {
     const page = path.join(process.cwd(), "app", href, "page.tsx")
-    expect(fs.existsSync(page), `${page} missing — the sidebar would 404`).toBe(true)
+    expect(fs.existsSync(page), `${page} missing — the menu would 404`).toBe(true)
   })
 
   it("lists every page once", () => {
-    expect(new Set(links.map((l) => l.href)).size).toBe(links.length)
+    expect(new Set(hrefs).size).toBe(hrefs.length)
   })
 
   it("matches whole path segments and treats / as exact", () => {
@@ -63,37 +55,46 @@ describe("navigation", () => {
     expect(isLinkActive("/my-ordersX", "/my-orders")).toBe(false)
   })
 
-  it("titles each page from its place in the nav, and nothing for unknown paths", () => {
+  it("titles each page from its place, and nothing for unknown paths", () => {
     expect(pageTitle("/")).toBe("Home")
+    expect(pageTitle("/orders")).toBe("Orders")
     expect(pageTitle("/badge-order")).toBe("Orders")
     expect(pageTitle("/my-inspections")).toBe("Me")
     expect(pageTitle("/activity-log/skills")).toBe("Me")
     expect(pageTitle("/nowhere")).toBeNull()
   })
 
-  it("has three places, two of them areas whose row opens their first page", () => {
-    expect(NAV_LINKS.map((l) => l.label)).toEqual(["Home", "Orders", "Me"])
-    for (const link of NAV_LINKS.filter((l) => l.tabs)) expect(link.href).toBe(link.tabs![0].href)
+  it("has three places; Orders and Me open their hubs", () => {
+    expect(NAV_LINKS.map((l) => [l.label, l.href])).toEqual([
+      ["Home", "/"],
+      ["Orders", "/orders"],
+      ["Me", "/me"],
+    ])
   })
 
-  it("puts ordering beside the orders, and lights the area on each of its pages", () => {
-    expect(areaFor("/uniform-order")?.label).toBe("Orders")
-    expect(areaFor("/my-orders")?.label).toBe("Orders")
-    expect(areaFor("/activity-log/physical")?.label).toBe("Me")
-    expect(areaFor("/")).toBeNull()
+  it("lights a place on its hub and every page in it", () => {
     const orders = NAV_LINKS.find((l) => l.label === "Orders")!
+    expect(isNavLinkActive("/orders", orders)).toBe(true)
     expect(isNavLinkActive("/badge-order", orders)).toBe(true)
     expect(isNavLinkActive("/my-details", orders)).toBe(false)
   })
 
-  it("shows the DofE tab only once staff have switched the log on", () => {
+  it("sends a page back to its hub, and Home and the hubs nowhere", () => {
+    expect(hubFor("/uniform-order")?.href).toBe("/orders")
+    expect(hubFor("/activity-log/physical")?.href).toBe("/me")
+    expect(hubFor("/")).toBeNull()
+    expect(hubFor("/orders")).toBeNull()
+    expect(hubFor("/check-in/ABC")).toBeNull()
+  })
+
+  it("lists the DofE log only once staff have switched it on", () => {
     const me = NAV_LINKS.find((l) => l.label === "Me")!
-    expect(shownTabs(me, { activityLog: false }).map((t) => t.label)).toEqual([
-      "Details",
-      "Inspections",
+    expect(shownPages(me, { activityLog: false }).map((p) => p.label)).toEqual([
+      "My details",
+      "My inspections",
       "Documents",
     ])
-    expect(shownTabs(me, { activityLog: true }).map((t) => t.label)).toContain("DofE log")
+    expect(shownPages(me, { activityLog: true }).map((p) => p.label)).toContain("DofE activity log")
   })
 })
 
