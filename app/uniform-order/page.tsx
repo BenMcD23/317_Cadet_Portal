@@ -414,7 +414,8 @@ export default function UniformOrderPage() {
         setError(data.detail ?? "Something went wrong. Please try again.")
         return
       }
-      router.push("/my-orders")
+      // My orders says it went, and what happens next.
+      router.push("/my-orders?sent=uniform")
     } catch {
       setError("Network error. Please check your connection and try again.")
     } finally {
@@ -426,7 +427,10 @@ export default function UniformOrderPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-6 pb-16">
-      <PageHeader title="Uniform Order" description="Select the items you need below" />
+      <PageHeader
+        title="Order Uniform"
+        description="Tick the items you need, then send the order to stores."
+      />
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Item selector */}
