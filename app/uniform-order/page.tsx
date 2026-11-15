@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { SizeCombobox } from "@/components/size-combobox"
 import { useReference } from "@/lib/reference"
+import { useCadetMe } from "@/lib/cadet-me"
 import { PageHeader } from "@/components/page-header"
 import { ErrorAlert } from "@/components/error-alert"
 import { Spinner } from "@/components/ui/spinner"
@@ -351,11 +352,11 @@ export default function UniformOrderPage() {
   const [selectorOpen, setSelectorOpen] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [isCadet, setIsCadet] = useState<boolean | null>(null)
-
-  useEffect(() => {
-    fetch("/api/cadet/me").then((r) => setIsCadet(r.ok))
-  }, [])
+  // Only a definite "no cadet record" (an adult signed in) orders as an adult.
+  // Not knowing yet, or the API failing, orders as a cadet: the API answers
+  // 404 if that's wrong, rather than a cadet's order landing on the adult list.
+  const { data: me } = useCadetMe()
+  const isAdult = me === null
 
   function toggleItem(itemType: string) {
     setSelectedItems((prev) => {
@@ -399,7 +400,7 @@ export default function UniformOrderPage() {
       const items = itemTypes
         .filter((t) => selectedItems.has(t))
         .map((t) => entryToApiItem(entries[t], noSizeItems))
-      const endpoint = isCadet === false ? "/api/user/orders" : "/api/cadet/orders"
+      const endpoint = isAdult ? "/api/user/orders" : "/api/cadet/orders"
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -162,36 +162,36 @@ function NumberedNotes({ notes }: { notes: NumberedNote[] }) {
   )
 }
 
-export default function MyInspectionsPage() {
-  const [history, setHistory] = useState<History | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  // Staff and adult volunteers have no Cadet record, so there is nothing to
-  // show them here — that's an explanation, not an error.
-  const [notACadet, setNotACadet] = useState(false)
+/**
+ * The cadet's own inspection history, or `null` for an account with no Cadet
+ * record (staff, adult volunteers): there is nothing to show them, and that's
+ * an explanation, not an error. Cached, so coming back to the page is instant.
+ */
+async function fetchInspections(): Promise<History | null> {
+  let res: Response
+  try {
+    res = await fetch("/api/cadet/inspections")
+  } catch {
+    throw new Error("Could not reach the server.")
+  }
+  if (res.status === 404) return null
+  const data = await res.json().catch(() => null)
+  if (!res.ok || !data) throw new Error(data?.detail ?? "Could not load your inspections.")
+  return data
+}
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const res = await fetch("/api/cadet/inspections")
-        const data = await res.json()
-        if (res.status === 404) {
-          setNotACadet(true)
-          return
-        }
-        if (!res.ok) {
-          setError(data.detail ?? "Could not load your inspections.")
-          return
-        }
-        setHistory(data)
-      } catch {
-        setError("Could not reach the server.")
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
-  }, [])
+export default function MyInspectionsPage() {
+  const {
+    data,
+    error: loadError,
+    isPending: loading,
+  } = useQuery({
+    queryKey: ["cadet", "inspections"],
+    queryFn: fetchInspections,
+  })
+  const history = data ?? null
+  const notACadet = data === null
+  const error = loadError?.message ?? null
 
   // Newest first — the last inspection is the one you came to read.
   const timeline = [...(history?.timeline ?? [])].reverse()

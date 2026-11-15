@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,51 +8,25 @@ import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 import { PageHeader } from "@/components/page-header"
+import { EmptyState } from "@/components/empty-state"
 import { ErrorAlert } from "@/components/error-alert"
-import { CheckCircle2, MessageSquare, ExternalLink } from "lucide-react"
-
-type Me = {
-  cin: number
-  name: string
-  email: string | null
-  phone_number: string
-  // Empty until staff have set one — the join card only appears when there is
-  // somewhere to send people.
-  whatsapp_invite_url: string
-}
+import { useCadetMe, useSetCadetMe } from "@/lib/cadet-me"
+import { CheckCircle2, MessageSquare, ExternalLink, UserRound } from "lucide-react"
 
 export default function MyDetailsPage() {
-  const [me, setMe] = useState<Me | null>(null)
-  const [phone, setPhone] = useState("")
-  const [loading, setLoading] = useState(true)
+  const { data: me, error: loadError, isPending: loading } = useCadetMe()
+  const setMe = useSetCadetMe()
+  // What's typed in the box; null until the cadet edits it, so it shows the
+  // number on file (which can arrive after the first render).
+  const [typed, setTyped] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
-  const [inviteUrl, setInviteUrl] = useState("")
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const res = await fetch("/api/cadet/me")
-        const data = await res.json()
-        if (!res.ok) {
-          setError(data.detail ?? "Could not load your details.")
-          return
-        }
-        setMe(data)
-        setPhone(data.phone_number ?? "")
-        setInviteUrl(data.whatsapp_invite_url ?? "")
-      } catch {
-        setError("Could not reach the server.")
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
-  }, [])
 
   // The number on file, so the Save button knows whether anything changed.
   const stored = me?.phone_number ?? ""
+  const phone = typed ?? stored
+  const inviteUrl = me?.whatsapp_invite_url ?? ""
   const dirty = phone.trim() !== stored
 
   const save = async () => {
@@ -70,9 +44,17 @@ export default function MyDetailsPage() {
         setError(data.detail ?? "Could not save your number.")
         return
       }
-      setPhone(data.phone_number ?? "")
-      setMe((prev) => (prev ? { ...prev, phone_number: data.phone_number ?? "" } : prev))
-      setInviteUrl(data.whatsapp_invite_url ?? "")
+      // Into the shared record, so Home stops asking for a number straight away.
+      setMe((prev) =>
+        prev
+          ? {
+              ...prev,
+              phone_number: data.phone_number ?? "",
+              whatsapp_invite_url: data.whatsapp_invite_url ?? prev.whatsapp_invite_url,
+            }
+          : prev
+      )
+      setTyped(null)
       setSaved(true)
     } catch {
       setError("Could not reach the server.")
@@ -88,10 +70,17 @@ export default function MyDetailsPage() {
         description="Keep your mobile number up to date so you get the parade night texts"
       />
 
-      <ErrorAlert message={error} />
+      <ErrorAlert message={error ?? loadError?.message ?? null} />
 
       {loading ? (
         <Skeleton className="h-56" />
+      ) : loadError ? null : me === null ? (
+        // An adult volunteer signed in: there is no cadet record to hold a number.
+        <EmptyState
+          icon={UserRound}
+          title="No cadet record"
+          description="Your sign-in isn't linked to a cadet record, so there's no number to set here."
+        />
       ) : (
         <Card>
           <CardHeader>
@@ -115,7 +104,7 @@ export default function MyDetailsPage() {
                   placeholder="07700 900000"
                   value={phone}
                   onChange={(e) => {
-                    setPhone(e.target.value)
+                    setTyped(e.target.value)
                     setSaved(false)
                   }}
                   className="max-w-xs"
@@ -128,7 +117,7 @@ export default function MyDetailsPage() {
               {saved && (
                 <p className="text-muted-foreground flex items-center gap-1.5 text-sm">
                   <CheckCircle2 className="size-3.5" />
-                  {phone ? "Saved — you're on the list." : "Saved — you'll no longer get the texts."}
+                  {stored ? "Saved — you're on the list." : "Saved — you'll no longer get the texts."}
                 </p>
               )}
             </div>
