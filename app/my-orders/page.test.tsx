@@ -50,6 +50,30 @@ function renderPage() {
 }
 
 describe("My Orders", () => {
+  // Coming back from Order Uniform shouldn't wait on the API again.
+  it("shows orders already loaded this visit without asking again", async () => {
+    answers = {
+      "/api/cadet/me": () => new Response(JSON.stringify({ cin: 1 })),
+      "/api/cadet/orders": () => new Response(JSON.stringify([])),
+    }
+    const client = new QueryClient({ defaultOptions: { queries: { staleTime: 60_000 } } })
+    const { unmount } = render(
+      <QueryClientProvider client={client}>
+        <MyOrdersPage />
+      </QueryClientProvider>
+    )
+    await waitFor(() => expect(requested).toContain("/api/cadet/badge-orders"))
+    unmount()
+    requested = []
+    render(
+      <QueryClientProvider client={client}>
+        <MyOrdersPage />
+      </QueryClientProvider>
+    )
+    expect(screen.queryByText("Loading…")).toBeNull()
+    expect(requested).toEqual([])
+  })
+
   it("loads a cadet's own uniform and badge orders", async () => {
     answers = { "/api/cadet/me": () => new Response(JSON.stringify({ cin: 1 })) }
     renderPage()
@@ -72,7 +96,8 @@ describe("My Orders", () => {
       "/api/cadet/me": () => new Response(JSON.stringify({ error: "API unreachable" }), { status: 503 }),
     }
     renderPage()
-    expect(await screen.findByText("Failed to load your orders")).toBeInTheDocument()
+    // The record lookup tries a 5xx once more (about a second) before giving up.
+    expect(await screen.findByText("Failed to load your orders", {}, { timeout: 3000 })).toBeInTheDocument()
     expect(requested).not.toContain("/api/user/orders")
   })
 
