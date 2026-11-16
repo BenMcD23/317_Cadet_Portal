@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { PageHeader } from "@/components/page-header"
 import { SectionHeading } from "@/components/section-heading"
 import { ActionList, type ActionLink } from "@/components/action-list"
+import { OpenOrders } from "@/components/open-orders"
 import { useReference } from "@/lib/reference"
 import { formatDate } from "@/lib/format"
 import { SECTION_INFO, sectionsDueThisWeek, useActivityLog, type SectionKey } from "@/lib/activity-log"
@@ -121,6 +122,9 @@ export default function HomePage() {
           <ChevronRight className="text-muted-foreground size-4 shrink-0" aria-hidden />
         </Link>
       )}
+
+      {/* What's happening with their kit comes before the places to go. */}
+      <OpenOrders />
 
       <ActionList links={QUICK_LINKS} />
 
