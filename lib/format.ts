@@ -13,3 +13,15 @@ export function todayLocal(now: Date = new Date()): string {
   const pad = (n: number) => String(n).padStart(2, "0")
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
 }
+
+/** "14 Mar 2026, 18:30": when an order or a hand-over happened. */
+export function formatTimestamp(ts: string) {
+  return new Date(ts).toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  })
+}

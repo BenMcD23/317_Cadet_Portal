@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -9,7 +9,8 @@ import { SectionHeading } from "@/components/section-heading"
 import { ActionList, type ActionLink } from "@/components/action-list"
 import { useReference } from "@/lib/reference"
 import { formatDate } from "@/lib/format"
-import { SECTION_INFO, sectionsDueThisWeek, type SectionKey } from "@/lib/activity-log"
+import { SECTION_INFO, sectionsDueThisWeek, useActivityLog, type SectionKey } from "@/lib/activity-log"
+import { useCadetMe } from "@/lib/cadet-me"
 import { Shirt, Award, ClipboardList, ChevronRight, MessageSquare, NotebookPen } from "lucide-react"
 
 const QUICK_LINKS: ActionLink[] = [
@@ -40,6 +41,21 @@ type Issuance = {
   sizeGiven: string | null
 }
 
+/**
+ * What's been issued to whoever is signed in: a cadet's kit, or an adult's own
+ * when there's no cadet record. `null` (the section hides) if neither answers.
+ */
+async function fetchIssuances(): Promise<Issuance[] | null> {
+  for (const url of ["/api/cadet/issuances", "/api/user/issuances"]) {
+    const res = await fetch(url).catch(() => null)
+    if (res?.ok) {
+      const data = await res.json().catch(() => null)
+      return Array.isArray(data) ? data : null
+    }
+  }
+  return null
+}
+
 /** "Skills", "Skills and Physical", "Skills, Volunteering and Physical". */
 function listSections(keys: SectionKey[]): string {
   const names = keys.map((k) => SECTION_INFO[k].label)
@@ -49,64 +65,21 @@ function listSections(keys: SectionKey[]): string {
 export default function HomePage() {
   const { data: session } = useSession()
   const { issuanceCategories } = useReference()
-  const [issuances, setIssuances] = useState<Issuance[] | null>(null)
-  const [loading, setLoading] = useState(true)
-  // Only ever true for a cadet with no number saved — staff and adults have no
-  // /cadets/me record, so they never see the prompt.
-  const [needsPhone, setNeedsPhone] = useState(false)
+  // Both are shared with the pages they come from (My Details, the activity
+  // log), so this page reads their cached copies. A failure only hides the
+  // prompt: a reminder isn't worth an error banner.
+  const { data: me } = useCadetMe()
+  const { data: activityLog } = useActivityLog()
+  // Only true for a cadet with no number saved: staff and adults have no
+  // /cadets/me record (null), so they never see the prompt.
+  const needsPhone = !!me && !me.phone_number
   // DofE sections still under an hour this week. Empty for anyone staff
   // haven't switched on, so the reminder only reaches cadets doing it.
-  const [dofeDue, setDofeDue] = useState<SectionKey[]>([])
-
-  useEffect(() => {
-    async function loadActivityLog() {
-      try {
-        const res = await fetch("/api/cadet/activity-log")
-        if (!res.ok) return
-        setDofeDue(sectionsDueThisWeek(await res.json()))
-      } catch {
-        // A reminder isn't worth an error banner.
-      }
-    }
-    loadActivityLog()
-  }, [])
-
-  useEffect(() => {
-    async function loadPhone() {
-      try {
-        const res = await fetch("/api/cadet/me")
-        if (!res.ok) return
-        const me = await res.json()
-        setNeedsPhone(!me.phone_number)
-      } catch {
-        // A dashboard prompt isn't worth an error banner.
-      }
-    }
-    loadPhone()
-  }, [])
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const cadetRes = await fetch("/api/cadet/issuances").catch(() => null)
-        if (cadetRes?.ok) {
-          const data = await cadetRes.json()
-          setIssuances(Array.isArray(data) ? data : null)
-          return
-        }
-        const userRes = await fetch("/api/user/issuances").catch(() => null)
-        if (userRes?.ok) {
-          const data = await userRes.json()
-          setIssuances(Array.isArray(data) ? data : null)
-        } else {
-          setIssuances(null)
-        }
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
-  }, [])
+  const dofeDue = sectionsDueThisWeek(activityLog)
+  const { data: issuances = null, isPending: loading } = useQuery({
+    queryKey: ["issuances"],
+    queryFn: fetchIssuances,
+  })
 
   const firstName = session?.user?.name?.split(" ")[0]
 

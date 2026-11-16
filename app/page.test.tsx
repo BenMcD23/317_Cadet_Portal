@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { render, screen, waitFor, within } from "@testing-library/react"
+import { screen, waitFor, within } from "@testing-library/react"
+import { QueryClient } from "@tanstack/react-query"
 import { describe, expect, it, vi } from "vitest"
 
 const SESSION = { data: { id_token: "tok", user: { name: "Cara Cadet" } }, status: "authenticated" }
@@ -10,6 +11,7 @@ vi.mock("@/lib/reference", () => ({
 
 import HomePage from "@/app/page"
 import { activityLog, sectionLog } from "@/tests/activity-log-fixtures"
+import { renderWithQuery } from "@/tests/render-with-query"
 
 /** Answers each portal route from a table; anything unlisted is a 404. */
 function api(routes: Record<string, { status?: number; body: unknown }>) {
@@ -32,7 +34,7 @@ const ISSUED = [
 describe("portal home", () => {
   it("greets the cadet by first name and links to every order page", async () => {
     api({ "/api/cadet/me": { body: { phone_number: "07700900000" } }, "/api/cadet/issuances": { body: [] } })
-    render(<HomePage />)
+    renderWithQuery(<HomePage />)
     expect(screen.getByRole("heading", { name: "Hello, Cara" })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: /Order Uniform/ })).toHaveAttribute("href", "/uniform-order")
     expect(screen.getByRole("link", { name: /Order Badges/ })).toHaveAttribute("href", "/badge-order")
@@ -42,7 +44,7 @@ describe("portal home", () => {
 
   it("asks a cadet with no mobile number to add one, linking to My Details", async () => {
     api({ "/api/cadet/me": { body: { phone_number: "" } }, "/api/cadet/issuances": { body: [] } })
-    render(<HomePage />)
+    renderWithQuery(<HomePage />)
     expect(await screen.findByRole("link", { name: /Add your mobile number/ })).toHaveAttribute(
       "href",
       "/my-details"
@@ -54,14 +56,14 @@ describe("portal home", () => {
       "/api/cadet/me": { body: { phone_number: "07700900000" } },
       "/api/cadet/issuances": { body: ISSUED },
     })
-    render(<HomePage />)
+    renderWithQuery(<HomePage />)
     await screen.findByText("Uniform issued to you")
     expect(screen.queryByText("Add your mobile number")).toBeNull()
   })
 
   it("shows the last size issued of each item, and says when something was never issued", async () => {
     api({ "/api/cadet/me": { body: { phone_number: "x" } }, "/api/cadet/issuances": { body: ISSUED } })
-    render(<HomePage />)
+    renderWithQuery(<HomePage />)
     const list = within(await screen.findByRole("list", { name: "Uniform issued to you" }))
     const row = (name: string) => within(list.getByText(name).closest("li")!)
     expect(row("Beret").getByText("55")).toBeInTheDocument()
@@ -74,14 +76,14 @@ describe("portal home", () => {
   // Staff sign in to order their own kit: no cadet record, so the adult list.
   it("falls back to the adult's own issued kit when there's no cadet record", async () => {
     api({ "/api/user/issuances": { body: [ISSUED[0]] } })
-    render(<HomePage />)
+    renderWithQuery(<HomePage />)
     expect(await screen.findByText("55")).toBeInTheDocument()
     expect(screen.queryByText("Add your mobile number")).toBeNull()
   })
 
   it("leaves the issued section out rather than crashing when it can't be loaded", async () => {
     api({ "/api/cadet/issuances": { status: 500, body: { detail: "boom" } } })
-    render(<HomePage />)
+    renderWithQuery(<HomePage />)
     await waitFor(() => expect(screen.queryByRole("status")).toBeNull())
     expect(screen.queryByText("Uniform issued to you")).toBeNull()
     expect(screen.getByRole("link", { name: /My Orders/ })).toBeInTheDocument()
@@ -99,7 +101,7 @@ describe("portal home", () => {
         }),
       },
     })
-    render(<HomePage />)
+    renderWithQuery(<HomePage />)
     const prompt = await screen.findByRole("link", { name: /Log this week's DofE/ })
     expect(prompt).toHaveAttribute("href", "/activity-log")
     expect(prompt).toHaveTextContent("Skills and Physical still need an hour this week.")
@@ -116,8 +118,30 @@ describe("portal home", () => {
       "/api/cadet/issuances": { body: ISSUED },
       "/api/cadet/activity-log": answer,
     })
-    render(<HomePage />)
+    renderWithQuery(<HomePage />)
     await screen.findByText("Uniform issued to you")
     expect(screen.queryByText("Log this week's DofE")).toBeNull()
+  })
+})
+
+describe("portal home, the cadet record", () => {
+  // The record can't be checked, which is not the same as "no number saved".
+  it("doesn't ask for a mobile number when the record can't be loaded", async () => {
+    api({
+      "/api/cadet/me": { status: 500, body: { detail: "Internal Server Error" } },
+      "/api/cadet/issuances": { body: ISSUED },
+    })
+    renderWithQuery(<HomePage />)
+    await screen.findByText("Uniform issued to you")
+    expect(screen.queryByText("Add your mobile number")).toBeNull()
+  })
+
+  it("reads a record another page already loaded instead of asking the API again", async () => {
+    api({ "/api/cadet/issuances": { body: [] } })
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 60_000 } } })
+    client.setQueryData(["cadet", "me"], { phone_number: "" })
+    renderWithQuery(<HomePage />, client)
+    expect(await screen.findByRole("link", { name: /Add your mobile number/ })).toBeInTheDocument()
+    expect(vi.mocked(fetch).mock.calls.map(([url]) => url)).not.toContain("/api/cadet/me")
   })
 })
