@@ -69,7 +69,9 @@ export function OrderDisclosure({
           </div>
           {meta && <div className="text-muted-foreground text-xs">{meta}</div>}
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        {/* Wraps rather than widening the card past a phone's screen. Kept in
+            step with the SMS site's copy, where four badges did just that. */}
+        <div className="flex max-w-full min-w-0 flex-wrap items-center gap-2">
           {aside}
           <Button
             size="icon"
