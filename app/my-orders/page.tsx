@@ -23,32 +23,12 @@ import {
 } from "@/components/responsive-dialog"
 import { SectionHeading } from "@/components/section-heading"
 import { formatTimestamp } from "@/lib/format"
-import { useCadetMe } from "@/lib/cadet-me"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMyOrders } from "@/lib/my-orders"
 import { AddBadgeRow, type GainedWhereState, gainedWhereSummary } from "./components/badge-fields"
 import { AddItemRow, SizingDetailsDisplay, SizingEditor } from "./components/sizing"
 import { type BadgeItem, type BadgeOrder, type DraftItem, type Order } from "./types"
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
-
-type MyOrders = { uniform: Order[]; badge: BadgeOrder[] }
-const NO_ORDERS: MyOrders = { uniform: [], badge: [] }
-
-/**
- * A cadet's own uniform and badge orders, or an adult's own uniform orders
- * (adults have no badge orders). Which list depends on the cadet record, and
- * only a definite "not a cadet" (null) reads the adult one.
- */
-async function fetchMyOrders(isCadet: boolean): Promise<MyOrders> {
-  const [uRes, bRes] = await Promise.all([
-    fetch(isCadet ? "/api/cadet/orders" : "/api/user/orders"),
-    isCadet ? fetch("/api/cadet/badge-orders") : Promise.resolve(new Response("[]")),
-  ])
-  if (!uRes.ok) throw new Error("Failed to load uniform orders")
-  const uniform = await uRes.json()
-  const badge = bRes.ok ? await bRes.json() : []
-  return { uniform: Array.isArray(uniform) ? uniform : [], badge: Array.isArray(badge) ? badge : [] }
-}
 
 type Entry =
   | { key: string; ts: number; kind: "uniform"; order: Order }
@@ -56,30 +36,12 @@ type Entry =
 
 export default function MyOrdersPage() {
   const { itemTypes, gainedWhereOptions } = useReference()
-  const client = useQueryClient()
-  // The cadet record is shared with Home and My Details, so it's usually cached.
-  // 404 is the only answer that means "not a cadet"; anything else (the API
-  // being down, say) must not quietly swap a cadet onto the adult order list
-  // and show them nothing.
-  const me = useCadetMe()
-  const isCadet = me.data === undefined ? undefined : me.data !== null
-  const ordersKey = ["my-orders", isCadet ? "cadet" : "adult"] as const
-  const orders = useQuery({
-    queryKey: ordersKey,
-    queryFn: () => fetchMyOrders(!!isCadet),
-    enabled: isCadet !== undefined,
-  })
-  const { uniform: uniformOrders, badge: badgeOrders } = orders.data ?? NO_ORDERS
-  const loading = !me.error && (me.isPending || orders.isPending)
-  // A failed save or cancel; the load's own failure comes from the queries.
+  const orders = useMyOrders()
+  const { uniform: uniformOrders, badge: badgeOrders, loading, setUniform: setUniformOrders } = orders
+  const setBadgeOrders = orders.setBadge
+  // A failed save or cancel; the load's own failure comes from the query.
   const [actionError, setError] = useState<string | null>(null)
-  const loadError = me.error ? "Failed to load your orders" : (orders.error?.message ?? null)
-  const error = actionError ?? loadError
-  // Saves answer with the updated order, which goes straight into the cache.
-  const setUniformOrders = (update: (prev: Order[]) => Order[]) =>
-    client.setQueryData<MyOrders>(ordersKey, (prev) => prev && { ...prev, uniform: update(prev.uniform) })
-  const setBadgeOrders = (update: (prev: BadgeOrder[]) => BadgeOrder[]) =>
-    client.setQueryData<MyOrders>(ordersKey, (prev) => prev && { ...prev, badge: update(prev.badge) })
+  const error = actionError ?? orders.error
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
 
   // Uniform order editing state
