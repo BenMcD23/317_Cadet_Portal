@@ -1,8 +1,8 @@
 import type { Metadata } from "next"
 import Image from "next/image"
-import { PageHeader } from "@/components/page-header"
-import { SectionHeading } from "@/components/section-heading"
-import { Card } from "@/components/ui/card"
+import { PageHeader } from "@317/ui-common/components/page-header"
+import { SectionHeading } from "@317/ui-common/components/section-heading"
+import { Card } from "@317/ui-common/components/ui/card"
 import { Download } from "lucide-react"
 
 export const metadata: Metadata = {

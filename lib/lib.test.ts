@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from "vitest"
 import { formatDate } from "@/lib/format"
 import { isLinkActive, NAV_SECTIONS, pageTitle } from "@/lib/navigation"
 import { buildBadgeName, gainedWhereLabel, needsGainedWhere, type BadgeCategory } from "@/lib/reference"
-import { cn } from "@/lib/utils"
+import { cn } from "@317/ui-common/lib/utils"
 
 describe("formatDate", () => {
   it("formats British style with a fallback for missing dates", () => {

@@ -72,14 +72,15 @@ nested cards, no decoration, reuse before you build). What differs here:
   next after an action.
 - **Orders** are `OrderDisclosure` rows in an `OrderList` showing what's in the
   order and its status (`lib/order-status.ts`) _before_ it's opened. The
-  component is the same file the SMS site uses.
-- **Shared components.** `OrderDisclosure`, `ResponsiveDialog`, `EmptyState`,
-  `ErrorAlert`, `PageHeader`, `SectionHeading`, `components/ui` and
-  `lib/utils.ts` are the SMS site's files (the list is in
-  `scripts/shared-files.mjs`). Change them there first, then
-  `npm run shared:sync`. `npm run shared:check` (CI's "Shared files" job, not
-  required) fails while they differ from the site's main; with both pull
-  requests open, check with `npm run shared:check -- --from ../317_SMS_Site`.
+  component comes from `@317/ui-common`, which the SMS site uses too.
+- **Shared components** (`OrderDisclosure`, `ResponsiveDialog`, `EmptyState`,
+  `ErrorAlert`, `PageHeader`, `SectionHeading`, the shared shadcn parts,
+  `useIsMobile`, `cn`) come from `@317/ui-common`
+  ([317-UI-Common](https://github.com/BenMcD23/317-UI-Common)), the same
+  package the SMS site uses, pinned to a GitHub release. Change them there,
+  not here: its README has the steps. `tests/ui-common.test.ts` checks the
+  `transpilePackages`, Tailwind `@source` and pinned-release wiring; without
+  the `@source` line the components render unstyled, silently.
 - **A dialog is a `ResponsiveDialog`** (bottom sheet on a phone).
 - **Colour:** tokens only (`text-warning`, `bg-primary/10`); status colours
   mean a state. Nothing is conveyed by colour alone: the badge says the word.

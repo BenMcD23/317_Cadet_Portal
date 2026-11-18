@@ -1,8 +1,8 @@
 "use client"
 
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@317/ui-common/components/ui/input"
+import { Label } from "@317/ui-common/components/ui/label"
+import { Textarea } from "@317/ui-common/components/ui/textarea"
 import { ChoiceButtons } from "@/components/activity-log/choice-buttons"
 import { formatDate, todayLocal } from "@/lib/format"
 import { formatMinutes } from "@/lib/activity-log"

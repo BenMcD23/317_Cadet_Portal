@@ -3,6 +3,8 @@ import type { NextConfig } from "next"
 import { securityHeaders } from "./lib/security-headers"
 
 const nextConfig: NextConfig = {
+  // The shared components ship as TypeScript source; Next compiles them like our own.
+  transpilePackages: ["@317/ui-common"],
   // `radix-ui` (the single consolidated package shadcn/ui imports from) has
   // hundreds of named exports; without this every page bundles the whole
   // package. lucide-react is already in Next's built-in default list.

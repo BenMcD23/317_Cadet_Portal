@@ -1,6 +1,6 @@
 import { Check } from "lucide-react"
 
-import { cn } from "@/lib/utils"
+import { cn } from "@317/ui-common/lib/utils"
 import { formatMinutes, weekLabel, type SectionLog } from "@/lib/activity-log"
 
 /**

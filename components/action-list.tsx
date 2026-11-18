@@ -2,7 +2,7 @@ import Link from "next/link"
 import type { LucideIcon } from "lucide-react"
 import { ChevronRight } from "lucide-react"
 
-import { cn } from "@/lib/utils"
+import { cn } from "@317/ui-common/lib/utils"
 
 export type ActionLink = { href: string; icon: LucideIcon; title: string; desc: string }
 

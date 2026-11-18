@@ -1,5 +1,5 @@
-import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
+import { Badge } from "@317/ui-common/components/ui/badge"
+import { cn } from "@317/ui-common/lib/utils"
 import type { OrderStatus } from "@/lib/order-status"
 
 // "Ready to collect" is the only state that asks the cadet to do something,

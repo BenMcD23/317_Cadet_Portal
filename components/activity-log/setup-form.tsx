@@ -2,12 +2,12 @@
 
 import { useState } from "react"
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Spinner } from "@/components/ui/spinner"
-import { Textarea } from "@/components/ui/textarea"
-import { ErrorAlert } from "@/components/error-alert"
+import { Button } from "@317/ui-common/components/ui/button"
+import { Input } from "@317/ui-common/components/ui/input"
+import { Label } from "@317/ui-common/components/ui/label"
+import { Spinner } from "@317/ui-common/components/ui/spinner"
+import { Textarea } from "@317/ui-common/components/ui/textarea"
+import { ErrorAlert } from "@317/ui-common/components/error-alert"
 import { ChoiceButtons } from "@/components/activity-log/choice-buttons"
 import {
   DURATIONS,

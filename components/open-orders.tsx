@@ -4,7 +4,7 @@ import Link from "next/link"
 import { ChevronRight } from "lucide-react"
 
 import { OrderStatusBadge } from "@/components/order-status-badge"
-import { SectionHeading } from "@/components/section-heading"
+import { SectionHeading } from "@317/ui-common/components/section-heading"
 import { useMyOrders } from "@/lib/my-orders"
 import { itemSummary, orderStatus, type OrderStatus } from "@/lib/order-status"
 

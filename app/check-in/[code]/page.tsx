@@ -5,10 +5,10 @@ import Link from "next/link"
 import { useParams } from "next/navigation"
 import { CheckCircle2, Info, RotateCcw, ScanLine } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Spinner } from "@/components/ui/spinner"
-import { cn } from "@/lib/utils"
+import { Button } from "@317/ui-common/components/ui/button"
+import { Card, CardContent } from "@317/ui-common/components/ui/card"
+import { Spinner } from "@317/ui-common/components/ui/spinner"
+import { cn } from "@317/ui-common/lib/utils"
 
 /** What the API sends back for a check-in. */
 type CheckIn = {
