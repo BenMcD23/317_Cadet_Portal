@@ -1,5 +1,7 @@
 import type { LucideIcon } from "lucide-react"
 
+import { cn } from "@/lib/utils"
+
 import {
   Empty,
   EmptyContent,
@@ -8,7 +10,6 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
-import { cn } from "@/lib/utils"
 
 /**
  * "Nothing here" placeholder: an icon, a title, why it's empty and (optionally)

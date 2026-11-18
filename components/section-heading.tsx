@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils"
 
 /**
- * Heading for a block within a page ("Active" orders, a documents group).
+ * Heading for a block within a page (a group of orders, a settings group).
  * Sits between the page title and card titles in weight so the three never
  * compete.
  */
@@ -22,7 +22,7 @@ export function SectionHeading({
         <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
         {description && <p className="text-muted-foreground text-sm">{description}</p>}
       </div>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
+      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
   )
 }

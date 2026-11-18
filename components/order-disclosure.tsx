@@ -6,12 +6,14 @@ import { ChevronDown } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 
 /**
- * Shared with the SMS site's orders pages (same name there), so a cadet and
- * the stores team see an order behave the same way.
+ * The same file in the SMS site and the cadet portal, so a cadet and the
+ * stores team see an order behave the same way. Change the SMS site's copy
+ * first: the portal's `npm run shared:check` fails while they differ.
  *
- * One order in the cadet's orders list (uniform or badges): a header that's always
+ * One order in an orders list (uniform, badges): a header that's always
  * visible — who, when, what state — and a body that opens beneath it.
  *
  * The whole header toggles, not just the chevron: on a phone the chevron is a
@@ -69,8 +71,7 @@ export function OrderDisclosure({
           </div>
           {meta && <div className="text-muted-foreground text-xs">{meta}</div>}
         </div>
-        {/* Wraps rather than widening the card past a phone's screen. Kept in
-            step with the SMS site's copy, where four badges did just that. */}
+        {/* Wraps rather than widening the card past a phone's screen. */}
         <div className="flex max-w-full min-w-0 flex-wrap items-center gap-2">
           {aside}
           <Button
@@ -108,4 +109,24 @@ export function OrderDisclosure({
 /** The frame an orders list sits in: one border, rows split by hairlines. */
 export function OrderList({ children, className }: { children: React.ReactNode; className?: string }) {
   return <div className={cn("bg-card divide-y overflow-hidden rounded-lg border", className)}>{children}</div>
+}
+
+/** An `OrderList` while it loads, row for row, so the page doesn't jump when the orders land. */
+export function OrderListSkeleton({ rows = 5 }: { rows?: number }) {
+  return (
+    <OrderList>
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5" aria-hidden>
+          <div className="flex flex-col gap-1.5">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-5 w-14" />
+            <Skeleton className="size-8 rounded-md" />
+          </div>
+        </div>
+      ))}
+    </OrderList>
+  )
 }
