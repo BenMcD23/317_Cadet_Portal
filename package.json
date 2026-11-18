@@ -11,6 +11,8 @@
     "check": "npm run lint && npm run typecheck && npm run test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "shared:check": "node scripts/shared-files.mjs",
+    "shared:sync": "node scripts/shared-files.mjs --write",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"

@@ -72,7 +72,14 @@ nested cards, no decoration, reuse before you build). What differs here:
   next after an action.
 - **Orders** are `OrderDisclosure` rows in an `OrderList` showing what's in the
   order and its status (`lib/order-status.ts`) _before_ it's opened. The
-  component is the same one the SMS site uses; keep the two copies in step.
+  component is the same file the SMS site uses.
+- **Shared components.** `OrderDisclosure`, `ResponsiveDialog`, `EmptyState`,
+  `ErrorAlert`, `PageHeader`, `SectionHeading`, `components/ui` and
+  `lib/utils.ts` are the SMS site's files (the list is in
+  `scripts/shared-files.mjs`). Change them there first, then
+  `npm run shared:sync`. `npm run shared:check` (CI's "Shared files" job, not
+  required) fails while they differ from the site's main; with both pull
+  requests open, check with `npm run shared:check -- --from ../317_SMS_Site`.
 - **A dialog is a `ResponsiveDialog`** (bottom sheet on a phone).
 - **Colour:** tokens only (`text-warning`, `bg-primary/10`); status colours
   mean a state. Nothing is conveyed by colour alone: the badge says the word.
