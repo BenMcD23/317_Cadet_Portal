@@ -1,7 +1,7 @@
 "use client"
 
 import { signOut } from "next-auth/react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@317/ui-common/components/ui/button"
 import {
   Empty,
   EmptyContent,
@@ -9,7 +9,7 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@/components/ui/empty"
+} from "@317/ui-common/components/ui/empty"
 import { ShieldX } from "lucide-react"
 
 export default function UnauthorizedPage() {

@@ -1,7 +1,7 @@
 "use client"
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import { cn } from "@317/ui-common/lib/utils"
+import { Button } from "@317/ui-common/components/ui/button"
 
 /**
  * A row of big pick-one buttons ("30 min", "1 hour", "3 months"…) instead of

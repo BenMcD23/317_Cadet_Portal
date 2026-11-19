@@ -23,8 +23,8 @@ import {
   SidebarRail,
   SidebarTrigger,
   useSidebar,
-} from "@/components/ui/sidebar"
-import { Separator } from "@/components/ui/separator"
+} from "@317/ui-common/components/ui/sidebar"
+import { Separator } from "@317/ui-common/components/ui/separator"
 import { ThemeToggle } from "@/components/layout/theme-toggle"
 import { UserMenu } from "@/components/layout/user-menu"
 

@@ -1,5 +1,5 @@
-import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
+import { Badge } from "@317/ui-common/components/ui/badge"
+import { cn } from "@317/ui-common/lib/utils"
 import type { SectionStatus } from "@/lib/activity-log"
 
 // "To do" is the only state asking the cadet for something, so it's the one

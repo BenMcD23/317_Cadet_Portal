@@ -2,14 +2,14 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
-import { OrderDisclosure, OrderList } from "@/components/order-disclosure"
+import { Button } from "@317/ui-common/components/ui/button"
+import { Skeleton } from "@317/ui-common/components/ui/skeleton"
+import { OrderDisclosure, OrderList } from "@317/ui-common/components/order-disclosure"
 import { OrderStatusBadge } from "@/components/order-status-badge"
 import { itemSummary, orderStatus } from "@/lib/order-status"
-import { EmptyState } from "@/components/empty-state"
-import { PageHeader } from "@/components/page-header"
-import { ErrorAlert } from "@/components/error-alert"
+import { EmptyState } from "@317/ui-common/components/empty-state"
+import { PageHeader } from "@317/ui-common/components/page-header"
+import { ErrorAlert } from "@317/ui-common/components/error-alert"
 import { Plus, Trash2, PackageCheck, Pencil, X, Shirt, Award, ClipboardList } from "lucide-react"
 import { OrderSentNotice } from "@/components/order-sent-notice"
 import { useReference } from "@/lib/reference"
@@ -20,8 +20,8 @@ import {
   ResponsiveDialogFooter,
   ResponsiveDialogHeader,
   ResponsiveDialogTitle,
-} from "@/components/responsive-dialog"
-import { SectionHeading } from "@/components/section-heading"
+} from "@317/ui-common/components/responsive-dialog"
+import { SectionHeading } from "@317/ui-common/components/section-heading"
 import { formatTimestamp } from "@/lib/format"
 import { useMyOrders } from "@/lib/my-orders"
 import { AddBadgeRow, type GainedWhereState, gainedWhereSummary } from "./components/badge-fields"

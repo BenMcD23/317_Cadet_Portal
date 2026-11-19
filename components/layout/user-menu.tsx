@@ -3,7 +3,7 @@
 import { signOut, useSession } from "next-auth/react"
 import { ChevronsUpDown, LogOut } from "lucide-react"
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@317/ui-common/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,8 +12,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar"
+} from "@317/ui-common/components/ui/dropdown-menu"
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@317/ui-common/components/ui/sidebar"
 
 function initials(name: string | null | undefined): string {
   if (!name) return "?"

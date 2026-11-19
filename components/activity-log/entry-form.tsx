@@ -3,9 +3,9 @@
 import { useState } from "react"
 import { Plus, X } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
-import { Spinner } from "@/components/ui/spinner"
-import { ErrorAlert } from "@/components/error-alert"
+import { Button } from "@317/ui-common/components/ui/button"
+import { Spinner } from "@317/ui-common/components/ui/spinner"
+import { ErrorAlert } from "@317/ui-common/components/error-alert"
 import {
   EntryFields,
   entryErrors,

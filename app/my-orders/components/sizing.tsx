@@ -1,13 +1,19 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Button } from "@317/ui-common/components/ui/button"
+import { Label } from "@317/ui-common/components/ui/label"
+import { Checkbox } from "@317/ui-common/components/ui/checkbox"
 import { SizeCombobox } from "@/components/size-combobox"
-import { cn } from "@/lib/utils"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { cn } from "@317/ui-common/lib/utils"
+import { Input } from "@317/ui-common/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@317/ui-common/components/ui/select"
 import { useReference } from "@/lib/reference"
 import { type DraftItem, emptyDraft } from "../types"
 

@@ -1,15 +1,15 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
-import { EmptyState } from "@/components/empty-state"
-import { PageHeader } from "@/components/page-header"
-import { ErrorAlert } from "@/components/error-alert"
-import { SectionHeading } from "@/components/section-heading"
+import { Card, CardContent, CardHeader, CardTitle } from "@317/ui-common/components/ui/card"
+import { Badge } from "@317/ui-common/components/ui/badge"
+import { Skeleton } from "@317/ui-common/components/ui/skeleton"
+import { EmptyState } from "@317/ui-common/components/empty-state"
+import { PageHeader } from "@317/ui-common/components/page-header"
+import { ErrorAlert } from "@317/ui-common/components/error-alert"
+import { SectionHeading } from "@317/ui-common/components/section-heading"
 import { formatDate } from "@/lib/format"
-import { cn } from "@/lib/utils"
+import { cn } from "@317/ui-common/lib/utils"
 import { ClipboardCheck, UserX, CalendarDays } from "lucide-react"
 
 // One note left on a cadet during an inspection — where on the uniform it was

@@ -5,20 +5,20 @@ import Link from "next/link"
 import { useParams } from "next/navigation"
 import { ArrowLeft, CheckCircle2, ChevronRight, History, NotebookPen, PartyPopper } from "lucide-react"
 
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
-import { PageHeader } from "@/components/page-header"
-import { SectionHeading } from "@/components/section-heading"
-import { ErrorAlert } from "@/components/error-alert"
-import { EmptyState } from "@/components/empty-state"
+import { Alert, AlertDescription, AlertTitle } from "@317/ui-common/components/ui/alert"
+import { Button } from "@317/ui-common/components/ui/button"
+import { Skeleton } from "@317/ui-common/components/ui/skeleton"
+import { PageHeader } from "@317/ui-common/components/page-header"
+import { SectionHeading } from "@317/ui-common/components/section-heading"
+import { ErrorAlert } from "@317/ui-common/components/error-alert"
+import { EmptyState } from "@317/ui-common/components/empty-state"
 import {
   ResponsiveDialog,
   ResponsiveDialogContent,
   ResponsiveDialogDescription,
   ResponsiveDialogHeader,
   ResponsiveDialogTitle,
-} from "@/components/responsive-dialog"
+} from "@317/ui-common/components/responsive-dialog"
 import { EntryDialog } from "@/components/activity-log/entry-dialog"
 import { EntryForm, draftRows } from "@/components/activity-log/entry-form"
 import { SetupForm } from "@/components/activity-log/setup-form"

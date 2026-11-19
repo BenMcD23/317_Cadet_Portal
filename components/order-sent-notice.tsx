@@ -3,7 +3,7 @@
 import { useSearchParams } from "next/navigation"
 import { CheckCircle2 } from "lucide-react"
 
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Alert, AlertDescription, AlertTitle } from "@317/ui-common/components/ui/alert"
 
 const SENT: Record<string, string> = {
   uniform: "Your uniform order has gone to stores.",
