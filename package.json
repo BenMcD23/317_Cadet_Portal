@@ -16,7 +16,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@317/ui-common": "file:../317-ui-common/317-ui-common-1.0.0.tgz",
+    "@317/ui-common": "https://github.com/BenMcD23/317-UI-Common/releases/download/v1.0.0/317-ui-common-1.0.0.tgz",
     "@tanstack/react-query": "^5.104.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
